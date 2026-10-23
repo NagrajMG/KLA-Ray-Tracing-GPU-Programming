@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
 #include <vector>
 
 struct Vec3 {
@@ -320,7 +321,21 @@ __global__ void render(Vec3* image, Config config, Camera camera) {
     image[pixel] = render_pixel(config, camera, pixel);
 }
 
-int main() {
+int main(int argc, char** argv) {
+    int block_x = 16, block_y = 16;
+    if (argc != 1 && argc != 3) {
+        fprintf(stderr, "Usage: %s [block_x block_y]\n", argv[0]);
+        return 1;
+    }
+    if (argc == 3) {
+        block_x = atoi(argv[1]);
+        block_y = atoi(argv[2]);
+        if (block_x <= 0 || block_y <= 0 || block_x > 1024 || block_y > 1024 ||
+            block_x * block_y > 1024) {
+            fprintf(stderr, "Block dimensions must be positive with at most 1024 threads.\n");
+            return 1;
+        }
+    }
     Config config = configuration();
     Camera camera = make_camera(config);
     std::vector<Vec3> image(config.width * config.height);
@@ -329,7 +344,7 @@ int main() {
     Vec3* device_image;
     cudaMalloc(&device_image, bytes);
 
-    dim3 block(16, 16);
+    dim3 block(block_x, block_y);
     dim3 grid((config.width + block.x - 1) / block.x, (config.height + block.y - 1) / block.y);
 
     // Two warmup runs, excluded from timing.

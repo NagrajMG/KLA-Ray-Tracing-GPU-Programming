@@ -1,0 +1,5 @@
+ptxas info    : 0 bytes gmem
+ptxas info    : Compiling entry function '_Z6renderP4Vec36Config6Camera' for 'sm_52'
+ptxas info    : Function properties for _Z6renderP4Vec36Config6Camera
+    96 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 124 registers, 672 bytes cmem[0], 120 bytes cmem[2]
