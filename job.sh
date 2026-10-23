@@ -6,6 +6,8 @@
 #PBS -o raytracer.log
 #PBS -e raytracer.err
 
+set -e
+
 cd "$PBS_O_WORKDIR"
 module load cuda11.4
 make cpu cuda

@@ -332,8 +332,10 @@ int main() {
     dim3 block(16, 16);
     dim3 grid((config.width + block.x - 1) / block.x, (config.height + block.y - 1) / block.y);
 
-    // warming up
-    render<<<grid, block>>>(device_image, config, camera);
+    // Two warmup runs, excluded from timing.
+    for (int run = 0; run < 2; run++) {
+        render<<<grid, block>>>(device_image, config, camera);
+    }
     cudaDeviceSynchronize();
 
     cudaEvent_t start, stop;
@@ -348,7 +350,7 @@ int main() {
 
     float milliseconds;
     cudaEventElapsedTime(&milliseconds, start, stop);
-    printf("GPU kernel time: %.3f ms\n", milliseconds / 20, 20);
+    printf("GPU kernel time: %.3f ms\n", milliseconds / 20);
     cudaEventDestroy(start);
     cudaEventDestroy(stop);
 
