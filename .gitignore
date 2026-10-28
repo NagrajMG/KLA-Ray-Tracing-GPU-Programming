@@ -1,2 +1,3 @@
 /raytracer*.log
 /raytracer*.err
+.venv

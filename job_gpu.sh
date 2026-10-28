@@ -1,5 +1,5 @@
 #!/bin/bash -l
-#PBS -N selected_raytracer_gpu
+#PBS -N raytracer_on_gpu
 #PBS -l select=1:ncpus=1:ngpus=1
 #PBS -l walltime=01:00:00
 #PBS -q gpuq
