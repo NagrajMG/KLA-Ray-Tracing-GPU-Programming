@@ -1,7 +1,2 @@
-/bin/
-/images/
-/stats/**
-!/stats/**/
-!/stats/**/.gitkeep
 /raytracer*.log
 /raytracer*.err

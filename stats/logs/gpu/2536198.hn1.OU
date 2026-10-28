@@ -1,0 +1,22 @@
+mkdir -p bin
+nvcc -O3 -std=c++17 -lineinfo gpu/main.cu -o bin/raytracer_gpu
+Ray tracer benchmark
+Backend                 : GPU
+Tori                    : 64
+Room surfaces           : 5
+Area lights             : 2
+Resolution              : 1280 x 720
+Camera samples          : 16 (4 x 4)
+Samples per light       : 8 (4 x 2)
+Reflection depth        : 3
+Geometry precision      : double
+Colour precision        : float
+Ray epsilon             : 1e-05
+Timed runs              : 20
+Warm-up runs            : 2
+Timing scope            : CUDA events; render kernels only
+Image                   : images/gpu/render.ppm
+Kernel                  : render_kernel
+Threads per block       : 256
+Blocks                  : 3600
+Average render time (ms): 1340.156
