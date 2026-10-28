@@ -1,4 +1,0 @@
-c++ -O3 -std=c++17 src/raytracer_cpu.cpp -o raytracer_cpu
-nvcc -O3 -std=c++17 src/raytracer_cuda.cu -o raytracer_cuda
-CPU render time: 781.009 ms (average of 20 runs)
-GPU kernel time: 1.279 ms
