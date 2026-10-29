@@ -2,7 +2,7 @@
 
 Serial C++ and CUDA renderers for a scene of 64 tori.
 
-![GPU render](images/gpu/render.png)
+![GPU render](images/gpu/1280_720.png)
 
 Build with `make cpu` or `make gpu`.
 

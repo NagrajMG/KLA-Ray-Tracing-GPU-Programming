@@ -1,3 +1,4 @@
 /raytracer*.log
 /raytracer*.err
 .venv
+.DS_Store
