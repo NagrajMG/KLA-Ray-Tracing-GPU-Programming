@@ -19,7 +19,7 @@ void print_report_header(const char *backend, const RenderSettings &settings, in
               << "Samples per light       : " << settings.light_samples_x * settings.light_samples_y
               << " (" << settings.light_samples_x << " x " << settings.light_samples_y << ")\n"
               << "Reflection depth        : " << settings.reflection_depth << '\n'
-              << "Geometry precision      : double\n"
+              << "Geometry precision      : float\n"
               << "Colour precision        : float\n"
               << "Ray epsilon             : " << settings.ray_epsilon << '\n'
               << "Timed runs              : " << settings.runs << '\n'
@@ -29,7 +29,7 @@ void print_report_header(const char *backend, const RenderSettings &settings, in
               << std::flush;
 }
 
-void print_render_time(double average_ms) {
+void print_render_time(float average_ms) {
     std::cout << std::fixed << std::setprecision(3) << "Average render time (ms): " << average_ms
               << '\n';
 }

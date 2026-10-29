@@ -10,8 +10,8 @@ HD Color surface_color(const Hit &hit, const Material &material, const Scene &sc
                        const float *texture_data) {
     Color color = material.albedo;
     if (material.color_texture >= 0) {
-        double u = hit.u * material.repeat_u;
-        double v = hit.v * material.repeat_v;
+        float u = hit.u * material.repeat_u;
+        float v = hit.v * material.repeat_v;
         Color texel = sample_texture(scene.textures[material.color_texture], texture_data, u, v);
         color = color * texel;
     }
@@ -19,7 +19,7 @@ HD Color surface_color(const Hit &hit, const Material &material, const Scene &sc
 }
 
 HD Color background(Vec3 direction) {
-    float blend = (float)(0.5 * (direction.y + 1.0));
+    float blend = 0.5f * (direction.y + 1.0f);
     return Color{0.12f, 0.14f, 0.18f} * (1.0f - blend) + Color{0.38f, 0.50f, 0.70f} * blend;
 }
 
@@ -33,22 +33,22 @@ HD Color illuminate(const Hit &hit, Color albedo, const Material &material, Vec3
     for (int light_index = 0; light_index < LightCount; light_index++) {
         const AreaLight &light = scene.lights[light_index];
         Vec3 area_vector = cross(light.surface.edge_u, light.surface.edge_v);
-        double area = length(area_vector);
+        float area = length(area_vector);
         Vec3 light_normal = area_vector / area;
 
         for (int sample = 0; sample < sample_count; sample++) {
-            double u = (sample % settings.light_samples_x + 0.5) / settings.light_samples_x;
-            double v = (sample / settings.light_samples_x + 0.5) / settings.light_samples_y;
+            float u = (sample % settings.light_samples_x + 0.5f) / settings.light_samples_x;
+            float v = (sample / settings.light_samples_x + 0.5f) / settings.light_samples_y;
             Vec3 target =
                 light.surface.corner + light.surface.edge_u * u + light.surface.edge_v * v;
             Vec3 to_light = target - origin;
-            double distance_squared = dot(to_light, to_light);
-            double distance = sqrt(distance_squared);
+            float distance_squared = dot(to_light, to_light);
+            float distance = sqrtf(distance_squared);
             Vec3 light_direction = to_light / distance;
-            double cosine = dot(hit.normal, light_direction);
-            double light_cosine = -dot(light_normal, light_direction);
+            float cosine = dot(hit.normal, light_direction);
+            float light_cosine = -dot(light_normal, light_direction);
 
-            if (cosine <= 0.0 || light_cosine <= 0.0)
+            if (cosine <= 0.0f || light_cosine <= 0.0f)
                 continue;
 
             Ray shadow_ray{origin, light_direction};
@@ -59,14 +59,14 @@ HD Color illuminate(const Hit &hit, Color albedo, const Material &material, Vec3
 
             Vec3 half_vector = light_direction + view_direction;
             float highlight = 0.0f;
-            if (dot(half_vector, half_vector) > 0.0) {
-                float alignment = (float)fmax(0.0, dot(hit.normal, normalize(half_vector)));
+            if (dot(half_vector, half_vector) > 0.0f) {
+                float alignment = fmaxf(0.0f, dot(hit.normal, normalize(half_vector)));
                 highlight = powf(alignment, shininess);
             }
 
-            Color diffuse = albedo * (material.diffuse * (float)cosine);
+            Color diffuse = albedo * (material.diffuse * cosine);
             Color specular = material.specular * highlight;
-            float weight = (float)(area * light_cosine / (pi * distance_squared * sample_count));
+            float weight = area * light_cosine / (pi * distance_squared * sample_count);
             color = color + (diffuse + specular) * light.emission * weight;
         }
     }
@@ -80,7 +80,7 @@ HD Color trace(Ray ray, const Scene &scene, const RenderSettings &settings,
     Color throughput{1.0f, 1.0f, 1.0f};
 
     for (int depth = 0; depth <= settings.reflection_depth; depth++) {
-        Hit hit = intersect_scene(ray, scene, settings.ray_epsilon, DBL_MAX);
+        Hit hit = intersect_scene(ray, scene, settings.ray_epsilon, FLT_MAX);
 
         if (hit.material_index < 0 && hit.light_index < 0) {
             color = color + throughput * background(ray.direction);
@@ -90,14 +90,14 @@ HD Color trace(Ray ray, const Scene &scene, const RenderSettings &settings,
         if (hit.light_index >= 0) {
             const AreaLight &light = scene.lights[hit.light_index];
             Vec3 normal = cross(light.surface.edge_u, light.surface.edge_v);
-            if (dot(ray.direction, normal) < 0.0)
+            if (dot(ray.direction, normal) < 0.0f)
                 color = color + throughput * light.emission;
             break;
         }
 
         const Material &material = scene.materials[hit.material_index];
         Color albedo = surface_color(hit, material, scene, texture_data);
-        Color local = illuminate(hit, albedo, material, ray.direction * -1.0, scene, settings);
+        Color local = illuminate(hit, albedo, material, ray.direction * -1.0f, scene, settings);
         color = color + throughput * local * (1.0f - material.reflectivity);
 
         if (depth == settings.reflection_depth || material.reflectivity == 0.0f)

@@ -3,16 +3,16 @@
 #include "camera.h"
 #include "texture.h"
 
-const double TorusSpacing = 3.3;
-const double RoomHalfWidth = 0.5 * TorusColumns * TorusSpacing + 2.0;
-const double RoomHalfDepth = 0.5 * TorusRows * TorusSpacing + 2.0;
-const double RoomHeight = 14.0;
-const double FloorFront = 30.0;
+const float TorusSpacing = 3.3f;
+const float RoomHalfWidth = 0.5f * TorusColumns * TorusSpacing + 2.0f;
+const float RoomHalfDepth = 0.5f * TorusRows * TorusSpacing + 2.0f;
+const float RoomHeight = 14.0f;
+const float FloorFront = 30.0f;
 
-RenderSettings configuration() { return {640, 360, 4, 4, 4, 2, 3, 5, 1e-5}; } 
+RenderSettings configuration() { return {640, 360, 4, 4, 4, 2, 3, 5, 1e-5f}; }
 
 Camera scene_camera(const RenderSettings &settings) {
-    return make_camera({0.5, 9, 24}, {0, 2, -3}, {0, 1, 0}, 62, settings.width, settings.height);
+    return make_camera({0.5f, 9, 24}, {0, 2, -3}, {0, 1, 0}, 62, settings.width, settings.height);
 }
 
 void make_materials(Material *materials) {
@@ -27,8 +27,8 @@ void make_materials(Material *materials) {
     floor.reflectivity = 0.06f;
     floor.roughness = 0.60f;
     floor.color_texture = FloorColor;
-    floor.repeat_u = 2.0 * RoomHalfWidth / 8.0;
-    floor.repeat_v = (FloorFront + RoomHalfDepth) / 8.0;
+    floor.repeat_u = 2.0f * RoomHalfWidth / 8.0f;
+    floor.repeat_v = (FloorFront + RoomHalfDepth) / 8.0f;
 
     Material &wall = materials[WallMaterial];
     wall.albedo = {0.72f, 0.75f, 0.80f};
@@ -71,16 +71,16 @@ Scene make_scene(std::vector<float> &texture_data) {
     make_materials(scene.materials);
     make_textures(scene.textures, texture_data);
 
-    double tube_radii[3] = {0.16, 0.26, 0.38};
+    float tube_radii[3] = {0.16f, 0.26f, 0.38f};
     for (int row = 0; row < TorusRows; ++row) {
         for (int column = 0; column < TorusColumns; ++column) {
-            double major_radius = 0.9 + 0.1 * (column % 2);
-            double minor_radius = tube_radii[(row + column) % 3];
+            float major_radius = 0.9f + 0.1f * (column % 2);
+            float minor_radius = tube_radii[(row + column) % 3];
             TorusOrientation orientation = row < TorusRows / 2 ? Upright : Flat;
-            double y = orientation == Flat ? minor_radius : major_radius + minor_radius;
-            double x =
-                (column - 0.5 * (TorusColumns - 1)) * TorusSpacing + 0.35 * ((row % 2) - 0.5);
-            double z = (row - 0.5 * (TorusRows - 1)) * TorusSpacing;
+            float y = orientation == Flat ? minor_radius : major_radius + minor_radius;
+            float x =
+                (column - 0.5f * (TorusColumns - 1)) * TorusSpacing + 0.35f * ((row % 2) - 0.5f);
+            float z = (row - 0.5f * (TorusRows - 1)) * TorusSpacing;
             int index = row * TorusColumns + column;
             scene.tori[index] = {
                 {x, y, z}, major_radius, minor_radius, orientation, MetalMaterial + index % 3};
@@ -88,27 +88,27 @@ Scene make_scene(std::vector<float> &texture_data) {
     }
 
     scene.rectangles[0] = {{-RoomHalfWidth, 0, FloorFront},
-                           {2.0 * RoomHalfWidth, 0, 0},
+                           {2.0f * RoomHalfWidth, 0, 0},
                            {0, 0, -FloorFront - RoomHalfDepth},
                            FloorMaterial};
     scene.rectangles[1] = {{-RoomHalfWidth, RoomHeight, -RoomHalfDepth},
-                           {2.0 * RoomHalfWidth, 0, 0},
-                           {0, 0, 2.0 * RoomHalfDepth},
+                           {2.0f * RoomHalfWidth, 0, 0},
+                           {0, 0, 2.0f * RoomHalfDepth},
                            WallMaterial};
     scene.rectangles[2] = {{-RoomHalfWidth, 0, RoomHalfDepth},
-                           {0, 0, -2.0 * RoomHalfDepth},
+                           {0, 0, -2.0f * RoomHalfDepth},
                            {0, RoomHeight, 0},
                            MirrorMaterial};
     scene.rectangles[3] = {{RoomHalfWidth, 0, -RoomHalfDepth},
-                           {0, 0, 2.0 * RoomHalfDepth},
+                           {0, 0, 2.0f * RoomHalfDepth},
                            {0, RoomHeight, 0},
                            MirrorMaterial};
     scene.rectangles[4] = {{-RoomHalfWidth, 0, -RoomHalfDepth},
-                           {2.0 * RoomHalfWidth, 0, 0},
+                           {2.0f * RoomHalfWidth, 0, 0},
                            {0, RoomHeight, 0},
                            WallMaterial};
 
-    double light_y = RoomHeight - 0.2;
+    float light_y = RoomHeight - 0.2f;
     scene.lights[0] = {{{-10, light_y, -9}, {6, 0, 0}, {0, 0, 6}, WallMaterial},
                        {16.0f, 13.5f, 10.5f}};
     scene.lights[1] = {{{4, light_y, -3}, {6, 0, 0}, {0, 0, 6}, WallMaterial},

@@ -9,13 +9,13 @@ HD Color texture_texel(const Texture &texture, const float *data, int x, int y) 
     return {data[offset], data[offset + 1], data[offset + 2]};
 }
 
-HD Color sample_texture(const Texture &texture, const float *data, double u, double v) {
-    double x = (u - floor(u)) * texture.width - 0.5;
-    double y = (v - floor(v)) * texture.height - 0.5;
-    int left = (int)floor(x);
-    int top = (int)floor(y);
-    float fraction_x = (float)(x - left);
-    float fraction_y = (float)(y - top);
+HD Color sample_texture(const Texture &texture, const float *data, float u, float v) {
+    float x = (u - floorf(u)) * texture.width - 0.5f;
+    float y = (v - floorf(v)) * texture.height - 0.5f;
+    int left = (int)floorf(x);
+    int top = (int)floorf(y);
+    float fraction_x = x - left;
+    float fraction_y = y - top;
     left = (left + texture.width) % texture.width;
     top = (top + texture.height) % texture.height;
     int right = (left + 1) % texture.width;

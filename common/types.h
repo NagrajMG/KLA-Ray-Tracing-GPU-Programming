@@ -8,7 +8,7 @@
 #define HD
 #endif
 
-constexpr double pi = 3.14159265358979323846;
+constexpr float pi = 3.14159265358979323846f;
 const int TorusRows = 8;
 const int TorusColumns = 8;
 const int TorusCount = TorusRows * TorusColumns;
@@ -28,9 +28,9 @@ enum MaterialIndex {
 enum TextureIndex { FloorColor, TextureCount };
 
 struct Vec3 {
-    double x;
-    double y;
-    double z;
+    float x;
+    float y;
+    float z;
 };
 
 struct Color {
@@ -48,8 +48,8 @@ enum TorusOrientation { Flat, Upright };
 
 struct Torus {
     Vec3 center;
-    double major_radius;
-    double minor_radius;
+    float major_radius;
+    float minor_radius;
     TorusOrientation orientation;
     int material_index;
 };
@@ -88,7 +88,7 @@ struct RenderSettings {
     int light_samples_y;
     int reflection_depth;
     int runs;
-    double ray_epsilon;
+    float ray_epsilon;
 };
 
 struct Material {
@@ -98,8 +98,8 @@ struct Material {
     float reflectivity;
     float roughness;
     int color_texture;
-    double repeat_u;
-    double repeat_v;
+    float repeat_u;
+    float repeat_v;
 };
 
 struct AreaLight {
@@ -116,11 +116,11 @@ struct Scene {
 };
 
 struct Hit {
-    double t;
+    float t;
     Vec3 point;
     Vec3 normal;
-    double u;
-    double v;
+    float u;
+    float v;
     int material_index;
     int light_index;
 };
@@ -129,22 +129,22 @@ HD Vec3 operator+(Vec3 a, Vec3 b) { return {a.x + b.x, a.y + b.y, a.z + b.z}; }
 
 HD Vec3 operator-(Vec3 a, Vec3 b) { return {a.x - b.x, a.y - b.y, a.z - b.z}; }
 
-HD Vec3 operator*(Vec3 a, double scale) { return {a.x * scale, a.y * scale, a.z * scale}; }
+HD Vec3 operator*(Vec3 a, float scale) { return {a.x * scale, a.y * scale, a.z * scale}; }
 
-HD Vec3 operator/(Vec3 a, double scale) { return a * (1.0 / scale); }
+HD Vec3 operator/(Vec3 a, float scale) { return a * (1.0f / scale); }
 
-HD double dot(Vec3 a, Vec3 b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
+HD float dot(Vec3 a, Vec3 b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
 
 HD Vec3 cross(Vec3 a, Vec3 b) {
     return {a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x};
 }
 
-HD double length(Vec3 a) { return sqrt(dot(a, a)); }
+HD float length(Vec3 a) { return sqrtf(dot(a, a)); }
 
 HD Vec3 normalize(Vec3 a) { return a / length(a); }
 
 HD Vec3 reflect(Vec3 direction, Vec3 normal) {
-    return direction - normal * (2.0 * dot(direction, normal));
+    return direction - normal * (2.0f * dot(direction, normal));
 }
 
 HD Color operator+(Color a, Color b) { return {a.r + b.r, a.g + b.g, a.b + b.b}; }

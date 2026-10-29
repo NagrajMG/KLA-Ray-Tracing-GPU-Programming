@@ -17,7 +17,7 @@ int main() {
     std::vector<float> pixels(3 * pixel_count);
     Framebuffer image{pixels.data(), pixels.data() + pixel_count, pixels.data() + 2 * pixel_count};
 
-    double total_ms = 0.0;
+    float total_ms = 0.0f;
     for (int run = 0; run < settings.runs; ++run) {
         auto start = std::chrono::steady_clock::now();
         for (int pixel = 0; pixel < pixel_count; ++pixel) {
@@ -25,7 +25,7 @@ int main() {
             store_pixel(image, pixel, color);
         }
         auto stop = std::chrono::steady_clock::now();
-        total_ms += std::chrono::duration<double, std::milli>(stop - start).count();
+        total_ms += std::chrono::duration<float, std::milli>(stop - start).count();
     }
     write_image(image_path, image, settings);
     print_render_time(total_ms / settings.runs);
