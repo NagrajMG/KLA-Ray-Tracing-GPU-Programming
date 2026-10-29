@@ -1,0 +1,17 @@
+Ray tracer benchmark
+Backend                 : CPU
+Tori                    : 64
+Room surfaces           : 5
+Area lights             : 2
+Resolution              : 1280 x 720
+Camera samples          : 16 (4 x 4)
+Samples per light       : 8 (4 x 2)
+Reflection depth        : 3
+Geometry precision      : double
+Colour precision        : float
+Ray epsilon             : 1e-05
+Timed runs              : 20
+Warm-up runs            : 0
+Timing scope            : steady_clock; serial render loop
+Image                   : images/cpu/render.ppm
+Average render time (ms): 429021.119
