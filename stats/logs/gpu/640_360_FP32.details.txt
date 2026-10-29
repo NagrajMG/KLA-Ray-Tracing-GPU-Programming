@@ -1,0 +1,135 @@
+Ray tracer benchmark
+Backend                 : GPU
+Tori                    : 64
+Room surfaces           : 5
+Area lights             : 2
+Resolution              : 640 x 360
+Camera samples          : 16 (4 x 4)
+Samples per light       : 8 (4 x 2)
+Reflection depth        : 3
+Geometry precision      : float
+Colour precision        : float
+Ray epsilon             : 1e-05
+Timed runs              : 5
+Warm-up runs            : 2
+Timing scope            : CUDA events; render kernels only
+Image                   : images/gpu/render.ppm
+==PROF== Connected to process 143789 (/home/dell/code/confidential/bin/raytracer_gpu)
+Kernel                  : render_kernel
+Threads per block       : 256
+Blocks                  : 900
+==PROF== Profiling "render_kernel": 0%..
+==WARNING== Launching the workload is taking more time than expected. If this continues to hang, terminate the profile and re-try by profiling the range of all related launches using '--replay-mode range'. See https://docs.nvidia.com/nsight-compute/ProfilingGuide/index.html#replay for more details.
+..50%....100% - 11 passes
+Average render time (ms): 11252.113
+==PROF== Disconnected from process 143789
+==PROF== Report: /home/dell/code/confidential/stats/profiles/640_360_FP32.details.ncu-rep
+[143789] raytracer_gpu@127.0.0.1
+  render_kernel(const Scene *, Camera, RenderSettings, const float *, Framebuffer) (900, 1, 1)x(256, 1, 1), Context 1, Stream 7, Device 0, CC 8.6
+    Section: GPU Speed Of Light Throughput
+    ----------------------- ------------- --------------
+    Metric Name               Metric Unit   Metric Value
+    ----------------------- ------------- --------------
+    DRAM Frequency          cycle/nsecond           6.99
+    SM Frequency            cycle/nsecond           1.51
+    Elapsed Cycles                  cycle    683,581,012
+    Memory Throughput                   %          28.83
+    DRAM Throughput                     %           0.04
+    Duration                      msecond         451.21
+    L1/TEX Cache Throughput             %          29.12
+    L2 Cache Throughput                 %           0.54
+    SM Active Cycles                cycle 676,319,947.90
+    Compute (SM) Throughput             %          53.84
+    ----------------------- ------------- --------------
+
+    OPT   This kernel exhibits low compute throughput and memory bandwidth utilization relative to the peak performance 
+          of this device. Achieved compute throughput and/or memory bandwidth below 60.0% of peak typically indicate    
+          latency issues. Look at Scheduler Statistics and Warp State Statistics for potential reasons.                 
+
+    Section: Instruction Statistics
+    ---------------------------------------- ----------- --------------
+    Metric Name                              Metric Unit   Metric Value
+    ---------------------------------------- ----------- --------------
+    Avg. Executed Instructions Per Scheduler        inst 367,636,330.29
+    Executed Instructions                           inst 29,410,906,423
+    Avg. Issued Instructions Per Scheduler          inst 367,765,711.46
+    Issued Instructions                             inst 29,421,256,917
+    ---------------------------------------- ----------- --------------
+
+    OPT   Est. Local Speedup: 20.53%                                                                                    
+          This kernel executes 7850726936 fused and 5467552799 non-fused FP32 instructions. By converting pairs of      
+          non-fused instructions to their fused                                                                         
+          (https://docs.nvidia.com/cuda/floating-point/#cuda-and-floating-point), higher-throughput equivalent, the     
+          achieved FP32 performance could be increased by up to 21% (relative to its current performance). Check the    
+          Source page to identify where this kernel executes FP32 instructions.                                         
+
+    Section: Launch Statistics
+    -------------------------------- --------------- ---------------
+    Metric Name                          Metric Unit    Metric Value
+    -------------------------------- --------------- ---------------
+    Block Size                                                   256
+    Function Cache Configuration                     CachePreferNone
+    Grid Size                                                    900
+    Registers Per Thread             register/thread             109
+    Shared Memory Configuration Size           Kbyte            8.19
+    Driver Shared Memory Per Block       Kbyte/block            1.02
+    Dynamic Shared Memory Per Block       byte/block               0
+    Static Shared Memory Per Block        byte/block               0
+    # SMs                                         SM              20
+    Threads                                   thread         230,400
+    Uses Green Context                                             0
+    Waves Per SM                                               22.50
+    -------------------------------- --------------- ---------------
+
+    Section: Occupancy
+    ------------------------------- ----------- ------------
+    Metric Name                     Metric Unit Metric Value
+    ------------------------------- ----------- ------------
+    Block Limit SM                        block           16
+    Block Limit Registers                 block            2
+    Block Limit Shared Mem                block            8
+    Block Limit Warps                     block            6
+    Theoretical Active Warps per SM        warp           16
+    Theoretical Occupancy                     %        33.33
+    Achieved Occupancy                        %        26.68
+    Achieved Active Warps Per SM           warp        12.81
+    ------------------------------- ----------- ------------
+
+    OPT   Est. Local Speedup: 66.67%                                                                                    
+          The 4.00 theoretical warps per scheduler this kernel can issue according to its occupancy are below the       
+          hardware maximum of 12. This kernel's theoretical occupancy (33.3%) is limited by the number of required      
+          registers.                                                                                                    
+
+    Section: GPU and Memory Workload Distribution
+    -------------------------- ----------- --------------
+    Metric Name                Metric Unit   Metric Value
+    -------------------------- ----------- --------------
+    Average DRAM Active Cycles       cycle      1,322,608
+    Total DRAM Elapsed Cycles        cycle  9,457,817,088
+    Average L1 Active Cycles         cycle 676,319,947.90
+    Total L1 Elapsed Cycles          cycle 13,662,269,150
+    Average L2 Active Cycles         cycle  35,857,198.67
+    Total L2 Elapsed Cycles          cycle  7,756,008,900
+    Average SM Active Cycles         cycle 676,319,947.90
+    Total SM Elapsed Cycles          cycle 13,662,269,150
+    Average SMSP Active Cycles       cycle 669,741,771.39
+    Total SMSP Elapsed Cycles        cycle 54,649,076,600
+    -------------------------- ----------- --------------
+
+    Section: Source Counters
+    ------------------------- ----------- -------------
+    Metric Name               Metric Unit  Metric Value
+    ------------------------- ----------- -------------
+    Branch Instructions Ratio           %          0.15
+    Branch Instructions              inst 4,417,714,666
+    Branch Efficiency                   %         99.00
+    Avg. Divergent Branches                  336,802.05
+    ------------------------- ----------- -------------
+
+    OPT   Est. Speedup: 0.0648%                                                                                         
+          This kernel has uncoalesced global accesses resulting in a total of 23022007 excessive sectors (1% of the     
+          total 1970892235 sectors). Check the L2 Theoretical Sectors Global Excessive table for the primary source     
+          locations. The CUDA Programming Guide                                                                         
+          (https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#device-memory-accesses) has additional      
+          information on reducing uncoalesced device memory accesses.                                                   
+
