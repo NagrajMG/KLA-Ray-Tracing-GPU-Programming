@@ -9,7 +9,7 @@ const double RoomHalfDepth = 0.5 * TorusRows * TorusSpacing + 2.0;
 const double RoomHeight = 14.0;
 const double FloorFront = 30.0;
 
-RenderSettings configuration() { return {1280, 720, 4, 4, 4, 2, 3, 20, 1e-5}; }
+RenderSettings configuration() { return {640, 360, 4, 4, 4, 2, 3, 5, 1e-5}; } 
 
 Camera scene_camera(const RenderSettings &settings) {
     return make_camera({0.5, 9, 24}, {0, 2, -3}, {0, 1, 0}, 62, settings.width, settings.height);

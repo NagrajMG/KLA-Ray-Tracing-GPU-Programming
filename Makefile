@@ -14,7 +14,7 @@ bin/raytracer_cpu: cpu/main.cpp $(HEADERS)
 
 bin/raytracer_gpu: gpu/main.cu $(HEADERS)
 	mkdir -p bin
-	nvcc -O3 -std=c++17 -lineinfo gpu/main.cu -o $@
+	nvcc -O3 -std=c++17 -lineinfo -arch=sm_86 gpu/main.cu -o $@
 
 format:
 	clang-format -i cpu/main.cpp gpu/main.cu $(HEADERS)
