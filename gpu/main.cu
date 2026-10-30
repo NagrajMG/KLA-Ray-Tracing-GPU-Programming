@@ -43,7 +43,7 @@ int main() {
     Framebuffer device_image{device_pixels, device_pixels + pixel_count,
                              device_pixels + 2 * pixel_count};
 
-    int block_size = 256;
+    int block_size = 32;
     int block_count = (pixel_count + block_size - 1) / block_size;
     std::cout << "Kernel                  : render_kernel\n"
               << "Threads per block       : " << block_size << '\n'
