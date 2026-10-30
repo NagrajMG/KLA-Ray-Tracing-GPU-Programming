@@ -9,7 +9,9 @@ HD Color texture_texel(const Texture &texture, const float *data, int x, int y) 
     return {data[offset], data[offset + 1], data[offset + 2]};
 }
 
+// bilinear interpolation using the 4 upper and lower texels
 HD Color sample_texture(const Texture &texture, const float *data, float u, float v) {
+    // space coordinates
     float x = (u - floorf(u)) * texture.width - 0.5f;
     float y = (v - floorf(v)) * texture.height - 0.5f;
     int left = (int)floorf(x);
@@ -27,12 +29,14 @@ HD Color sample_texture(const Texture &texture, const float *data, float u, floa
     return upper * (1.0f - fraction_y) + lower * fraction_y;
 }
 
+// create checkerboard data
 void make_textures(Texture *textures, std::vector<float> &data) {
     Texture &texture = textures[FloorColor];
-    texture = {512, 512};
+    texture = {512, 512}; // each pixel in texture is texel, 512 * 512 texels
     data.resize(texture.width * texture.height * 3);
     for (int y = 0; y < texture.height; ++y) {
         for (int x = 0; x < texture.width; ++x) {
+            // each checker is 64 texels wide, 64 texels in z
             int checker = (8 * x / texture.width + 8 * y / texture.height) % 2;
             Color value = checker ? Color{0.14f, 0.17f, 0.20f} : Color{0.78f, 0.73f, 0.63f};
             int entry = (y * texture.width + x) * 3;

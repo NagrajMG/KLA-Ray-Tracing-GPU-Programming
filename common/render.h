@@ -8,7 +8,9 @@
 
 HD Color surface_color(const Hit &hit, const Material &material, const Scene &scene,
                        const float *texture_data) {
+    // base color
     Color color = material.albedo;
+    // floors are non-negative
     if (material.color_texture >= 0) {
         float u = hit.u * material.repeat_u;
         float v = hit.v * material.repeat_v;
@@ -18,17 +20,20 @@ HD Color surface_color(const Hit &hit, const Material &material, const Scene &sc
     return color;
 }
 
+// does not hit any object
 HD Color background(Vec3 direction) {
+    // -1 dark, 0 neutral, 1 blue based type
     float blend = 0.5f * (direction.y + 1.0f);
     return Color{0.12f, 0.14f, 0.18f} * (1.0f - blend) + Color{0.38f, 0.50f, 0.70f} * blend;
 }
 
+// from 2 area lights including the shadow
 HD Color illuminate(const Hit &hit, Color albedo, const Material &material, Vec3 view_direction,
                     const Scene &scene, const RenderSettings &settings) {
     Color color = albedo * (0.03f * material.diffuse);
     Vec3 origin = hit.point + hit.normal * settings.ray_epsilon;
     int sample_count = settings.light_samples_x * settings.light_samples_y;
-    float shininess = 2.0f / (material.roughness * material.roughness) - 2.0f;
+    float shininess = 2.0f / (material.roughness * material.roughness) - 2.0f; // Blinn–Phong
 
     for (int light_index = 0; light_index < LightCount; light_index++) {
         const AreaLight &light = scene.lights[light_index];
@@ -39,8 +44,7 @@ HD Color illuminate(const Hit &hit, Color albedo, const Material &material, Vec3
         for (int sample = 0; sample < sample_count; sample++) {
             float u = (sample % settings.light_samples_x + 0.5f) / settings.light_samples_x;
             float v = (sample / settings.light_samples_x + 0.5f) / settings.light_samples_y;
-            Vec3 target =
-                light.surface.corner + light.surface.edge_u * u + light.surface.edge_v * v;
+            Vec3 target = light.surface.corner + light.surface.edge_u * u + light.surface.edge_v * v;
             Vec3 to_light = target - origin;
             float distance_squared = dot(to_light, to_light);
             float distance = sqrtf(distance_squared);
@@ -51,6 +55,7 @@ HD Color illuminate(const Hit &hit, Color albedo, const Material &material, Vec3
             if (cosine <= 0.0f || light_cosine <= 0.0f)
                 continue;
 
+            // check if something blocks the light
             Ray shadow_ray{origin, light_direction};
             Hit blocker = intersect_scene(shadow_ray, scene, settings.ray_epsilon,
                                           distance - settings.ray_epsilon);
@@ -59,7 +64,7 @@ HD Color illuminate(const Hit &hit, Color albedo, const Material &material, Vec3
 
             Vec3 half_vector = light_direction + view_direction;
             float highlight = 0.0f;
-            if (dot(half_vector, half_vector) > 0.0f) {
+            if (dot(half_vector, half_vector) > 0.0f) { // non zero
                 float alignment = fmaxf(0.0f, dot(hit.normal, normalize(half_vector)));
                 highlight = powf(alignment, shininess);
             }
@@ -87,6 +92,7 @@ HD Color trace(Ray ray, const Scene &scene, const RenderSettings &settings,
             break;
         }
 
+        // hit by a light rectangle
         if (hit.light_index >= 0) {
             const AreaLight &light = scene.lights[hit.light_index];
             Vec3 normal = cross(light.surface.edge_u, light.surface.edge_v);

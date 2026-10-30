@@ -30,6 +30,5 @@ void print_report_header(const char *backend, const RenderSettings &settings, in
 }
 
 void print_render_time(float average_ms) {
-    std::cout << std::fixed << std::setprecision(3) << "Average render time (ms): " << average_ms
-              << '\n';
+    std::cout << std::fixed << std::setprecision(3) << "Average render time (ms): " << average_ms << '\n';
 }

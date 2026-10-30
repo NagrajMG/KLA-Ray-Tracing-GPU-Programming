@@ -38,10 +38,8 @@ int main() {
     cudaMalloc(&device_texture_data, texture_data.size() * sizeof(float));
     cudaMalloc(&device_pixels, pixels.size() * sizeof(float));
     cudaMemcpy(device_scene, &scene, sizeof(Scene), cudaMemcpyHostToDevice);
-    cudaMemcpy(device_texture_data, texture_data.data(), texture_data.size() * sizeof(float),
-               cudaMemcpyHostToDevice);
-    Framebuffer device_image{device_pixels, device_pixels + pixel_count,
-                             device_pixels + 2 * pixel_count};
+    cudaMemcpy(device_texture_data, texture_data.data(), texture_data.size() * sizeof(float), cudaMemcpyHostToDevice);
+    Framebuffer device_image{device_pixels, device_pixels + pixel_count, device_pixels + 2 * pixel_count};
 
     int block_size = 32;
     int block_count = (pixel_count + block_size - 1) / block_size;
@@ -50,8 +48,7 @@ int main() {
               << "Blocks                  : " << block_count << '\n'
               << std::flush;
     for (int run = 0; run < warmup_runs; ++run) {
-        render_kernel<<<block_count, block_size>>>(device_scene, camera, settings,
-                                                   device_texture_data, device_image);
+        render_kernel<<<block_count, block_size>>>(device_scene, camera, settings, device_texture_data, device_image);
     }
     cudaDeviceSynchronize();
 
@@ -61,8 +58,7 @@ int main() {
     cudaEventCreate(&stop);
     cudaEventRecord(start);
     for (int run = 0; run < settings.runs; ++run) {
-        render_kernel<<<block_count, block_size>>>(device_scene, camera, settings,
-                                                   device_texture_data, device_image);
+        render_kernel<<<block_count, block_size>>>(device_scene, camera, settings, device_texture_data, device_image);
     }
     cudaEventRecord(stop);
     cudaEventSynchronize(stop);
