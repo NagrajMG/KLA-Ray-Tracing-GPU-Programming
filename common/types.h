@@ -14,6 +14,9 @@ const int TorusColumns = 8;
 const int TorusCount = TorusRows * TorusColumns;
 const int RectangleCount = 5;
 const int LightCount = 2;
+const int LightSamplesX = 4;
+const int LightSamplesY = 2;
+const int LightSampleCount = LightSamplesX * LightSamplesY;
 
 enum MaterialIndex {
     FloorMaterial,
@@ -49,9 +52,11 @@ enum TorusOrientation { Flat, Upright };
 struct Torus {
     Vec3 center;
     float major_radius;
-    float minor_radius;
     TorusOrientation orientation;
     int material_index;
+    float radius;
+    float scaled_major_radius;
+    float scaled_minor_radius;
 };
 
 struct Rectangle {
@@ -59,6 +64,9 @@ struct Rectangle {
     Vec3 edge_u;
     Vec3 edge_v;
     int material_index;
+    Vec3 normal;
+    float inverse_u_squared;
+    float inverse_v_squared;
 };
 
 struct Texture {
@@ -84,8 +92,6 @@ struct RenderSettings {
     int height;
     int camera_samples_x;
     int camera_samples_y;
-    int light_samples_x;
-    int light_samples_y;
     int reflection_depth;
     int runs;
     float ray_epsilon;
@@ -96,15 +102,18 @@ struct Material {
     Color specular;
     float diffuse;
     float reflectivity;
-    float roughness;
     int color_texture;
     float repeat_u;
     float repeat_v;
+    float shininess;
 };
 
 struct AreaLight {
     Rectangle surface;
     Color emission;
+    float area;
+    Vec3 normal;
+    Vec3 samples[LightSampleCount];
 };
 
 struct Scene {

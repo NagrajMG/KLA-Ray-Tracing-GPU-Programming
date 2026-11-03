@@ -65,8 +65,8 @@ HD int solve_quartic(float a4, float a3, float a2, float a1, float a0, float roo
         float cubic_c = -q * q;
         float z = fmaxf(0.0f, largest_cubic_root(cubic_a, cubic_b, cubic_c));
         float bound = 1.0f + fmaxf(fabsf(cubic_a), fmaxf(fabsf(cubic_b), fabsf(cubic_c)));
+        float value = ((z + cubic_a) * z + cubic_b) * z + cubic_c;
         while (true) {
-            float value = ((z + cubic_a) * z + cubic_b) * z + cubic_c;
             float slope = (3.0f * z + 2.0f * cubic_a) * z + cubic_b;
             if (slope == 0.0f)
                 break;
@@ -77,6 +77,7 @@ HD int solve_quartic(float a4, float a3, float a2, float a1, float a0, float roo
             if (fabsf(residual) >= fabsf(value))
                 break;
             z = next;
+            value = residual;
         }
         if (z == 0.0f)
             return 0;
@@ -113,7 +114,7 @@ HD float intersect_torus(const Ray &ray, const Torus &torus, float t_min, float 
     Vec3 ray_direction = torus_local(ray.direction, torus.orientation);
     float direction_squared = dot(ray_direction, ray_direction);
     float direction_length = sqrtf(direction_squared);
-    float radius = torus.major_radius + torus.minor_radius;
+    float radius = torus.radius;
     float shift = -dot(relative, ray_direction) / direction_squared;
     float parameter_scale = radius / direction_length;
     Vec3 origin = (relative + ray_direction * shift) / radius;
@@ -128,8 +129,8 @@ HD float intersect_torus(const Ray &ray, const Torus &torus, float t_min, float 
     if (lower > upper)
         return -1.0f;
 
-    float major = torus.major_radius / radius;
-    float minor = torus.minor_radius / radius;
+    float major = torus.scaled_major_radius;
+    float minor = torus.scaled_minor_radius;
     float g2 = dot(direction, direction);
     float g1 = 2.0f * dot(origin, direction);
     float rho = sqrtf(origin.x * origin.x + origin.z * origin.z);
@@ -146,8 +147,8 @@ HD float intersect_torus(const Ray &ray, const Torus &torus, float t_min, float 
     int count = solve_quartic(a4, a3, a2, a1, a0, roots);
     for (int i = 0; i < count; ++i) {
         float root = roots[i];
+        float value = (((a4 * root + a3) * root + a2) * root + a1) * root + a0;
         while (true) {
-            float value = (((a4 * root + a3) * root + a2) * root + a1) * root + a0;
             float slope = ((4.0f * a4 * root + 3.0f * a3) * root + 2.0f * a2) * root + a1;
             if (slope == 0.0f)
                 break;
@@ -158,6 +159,7 @@ HD float intersect_torus(const Ray &ray, const Torus &torus, float t_min, float 
             if (fabsf(residual) >= fabsf(value))
                 break;
             root = next;
+            value = residual;
         }
         float t = shift + root * parameter_scale;
         if (t > t_min && t < t_max)
@@ -168,7 +170,7 @@ HD float intersect_torus(const Ray &ray, const Torus &torus, float t_min, float 
 
 HD float intersect_rectangle(const Ray &ray, const Rectangle &rectangle, float t_min, float t_max,
                              float &u, float &v) {
-    Vec3 normal = cross(rectangle.edge_u, rectangle.edge_v);
+    Vec3 normal = rectangle.normal;
     float denominator = dot(ray.direction, normal);
     if (denominator == 0.0f)
         return -1.0f;
@@ -176,9 +178,26 @@ HD float intersect_rectangle(const Ray &ray, const Rectangle &rectangle, float t
     if (t <= t_min || t >= t_max)
         return -1.0f;
     Vec3 point = ray.origin + ray.direction * t - rectangle.corner;
-    u = dot(point, rectangle.edge_u) / dot(rectangle.edge_u, rectangle.edge_u);
-    v = dot(point, rectangle.edge_v) / dot(rectangle.edge_v, rectangle.edge_v);
+    u = dot(point, rectangle.edge_u) * rectangle.inverse_u_squared;
+    v = dot(point, rectangle.edge_v) * rectangle.inverse_v_squared;
     return u >= 0.0f && u <= 1.0f && v >= 0.0f && v <= 1.0f ? t : -1.0f;
+}
+
+HD bool occluded(const Ray &ray, const Scene &scene, float t_min, float t_max) {
+    float u, v;
+    for (int i = 0; i < RectangleCount; ++i) {
+        if (intersect_rectangle(ray, scene.rectangles[i], t_min, t_max, u, v) >= 0.0f)
+            return true;
+    }
+    for (int i = 0; i < LightCount; ++i) {
+        if (intersect_rectangle(ray, scene.lights[i].surface, t_min, t_max, u, v) >= 0.0f)
+            return true;
+    }
+    for (int i = 0; i < TorusCount; ++i) {
+        if (intersect_torus(ray, scene.tori[i], t_min, t_max) >= 0.0f)
+            return true;
+    }
+    return false;
 }
 
 HD Hit intersect_scene(const Ray &ray, const Scene &scene, float t_min, float t_max) {
@@ -229,7 +248,7 @@ HD Hit intersect_scene(const Ray &ray, const Scene &scene, float t_min, float t_
         hit.normal = torus_world(normal, torus.orientation);
     } else {
         const Rectangle &rectangle = scene.rectangles[rectangle_index];
-        hit.normal = normalize(cross(rectangle.edge_u, rectangle.edge_v));
+        hit.normal = normalize(rectangle.normal);
     }
     if (dot(ray.direction, hit.normal) > 0.0f) {
         hit.normal = hit.normal * -1.0f;

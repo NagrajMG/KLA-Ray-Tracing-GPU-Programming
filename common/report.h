@@ -16,8 +16,8 @@ void print_report_header(const char *backend, const RenderSettings &settings, in
               << "Camera samples          : "
               << settings.camera_samples_x * settings.camera_samples_y << " ("
               << settings.camera_samples_x << " x " << settings.camera_samples_y << ")\n"
-              << "Samples per light       : " << settings.light_samples_x * settings.light_samples_y
-              << " (" << settings.light_samples_x << " x " << settings.light_samples_y << ")\n"
+              << "Samples per light       : " << LightSampleCount << " (" << LightSamplesX << " x "
+              << LightSamplesY << ")\n"
               << "Reflection depth        : " << settings.reflection_depth << '\n'
               << "Geometry precision      : float\n"
               << "Colour precision        : float\n"
@@ -30,5 +30,6 @@ void print_report_header(const char *backend, const RenderSettings &settings, in
 }
 
 void print_render_time(float average_ms) {
-    std::cout << std::fixed << std::setprecision(3) << "Average render time (ms): " << average_ms << '\n';
+    std::cout << std::fixed << std::setprecision(3) << "Average render time (ms): " << average_ms
+              << '\n';
 }

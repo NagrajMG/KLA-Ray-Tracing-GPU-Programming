@@ -32,46 +32,42 @@ HD Color illuminate(const Hit &hit, Color albedo, const Material &material, Vec3
                     const Scene &scene, const RenderSettings &settings) {
     Color color = albedo * (0.03f * material.diffuse);
     Vec3 origin = hit.point + hit.normal * settings.ray_epsilon;
-    int sample_count = settings.light_samples_x * settings.light_samples_y;
-    float shininess = 2.0f / (material.roughness * material.roughness) - 2.0f; // Blinn–Phong
+    bool has_specular =
+        material.specular.r != 0.0f || material.specular.g != 0.0f || material.specular.b != 0.0f;
 
     for (int light_index = 0; light_index < LightCount; light_index++) {
         const AreaLight &light = scene.lights[light_index];
-        Vec3 area_vector = cross(light.surface.edge_u, light.surface.edge_v);
-        float area = length(area_vector);
-        Vec3 light_normal = area_vector / area;
 
-        for (int sample = 0; sample < sample_count; sample++) {
-            float u = (sample % settings.light_samples_x + 0.5f) / settings.light_samples_x;
-            float v = (sample / settings.light_samples_x + 0.5f) / settings.light_samples_y;
-            Vec3 target = light.surface.corner + light.surface.edge_u * u + light.surface.edge_v * v;
-            Vec3 to_light = target - origin;
-            float distance_squared = dot(to_light, to_light);
-            float distance = sqrtf(distance_squared);
-            Vec3 light_direction = to_light / distance;
-            float cosine = dot(hit.normal, light_direction);
-            float light_cosine = -dot(light_normal, light_direction);
-
+        for (int sample = 0; sample < LightSampleCount; sample++) {
+            Vec3 to_light = light.samples[sample] - origin;
+            float cosine = dot(hit.normal, to_light);
+            float light_cosine = -dot(light.normal, to_light);
             if (cosine <= 0.0f || light_cosine <= 0.0f)
                 continue;
 
+            float distance_squared = dot(to_light, to_light);
+            float distance = sqrtf(distance_squared);
+            float inverse_distance = 1.0f / distance;
+            Vec3 light_direction = to_light * inverse_distance;
+            cosine *= inverse_distance;
+            light_cosine *= inverse_distance;
+
             // check if something blocks the light
             Ray shadow_ray{origin, light_direction};
-            Hit blocker = intersect_scene(shadow_ray, scene, settings.ray_epsilon,
-                                          distance - settings.ray_epsilon);
-            if (blocker.material_index >= 0 || blocker.light_index >= 0)
+            if (occluded(shadow_ray, scene, settings.ray_epsilon, distance - settings.ray_epsilon))
                 continue;
 
-            Vec3 half_vector = light_direction + view_direction;
-            float highlight = 0.0f;
-            if (dot(half_vector, half_vector) > 0.0f) { // non zero
-                float alignment = fmaxf(0.0f, dot(hit.normal, normalize(half_vector)));
-                highlight = powf(alignment, shininess);
+            Color specular{0.0f, 0.0f, 0.0f};
+            if (has_specular) {
+                Vec3 half_vector = light_direction + view_direction;
+                if (dot(half_vector, half_vector) > 0.0f) { // non zero
+                    float alignment = fmaxf(0.0f, dot(hit.normal, normalize(half_vector)));
+                    specular = material.specular * powf(alignment, material.shininess);
+                }
             }
 
             Color diffuse = albedo * (material.diffuse * cosine);
-            Color specular = material.specular * highlight;
-            float weight = area * light_cosine / (pi * distance_squared * sample_count);
+            float weight = light.area * light_cosine / (pi * distance_squared * LightSampleCount);
             color = color + (diffuse + specular) * light.emission * weight;
         }
     }
@@ -95,8 +91,7 @@ HD Color trace(Ray ray, const Scene &scene, const RenderSettings &settings,
         // hit by a light rectangle
         if (hit.light_index >= 0) {
             const AreaLight &light = scene.lights[hit.light_index];
-            Vec3 normal = cross(light.surface.edge_u, light.surface.edge_v);
-            if (dot(ray.direction, normal) < 0.0f)
+            if (dot(ray.direction, light.surface.normal) < 0.0f)
                 color = color + throughput * light.emission;
             break;
         }
