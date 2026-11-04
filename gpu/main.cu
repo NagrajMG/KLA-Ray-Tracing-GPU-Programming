@@ -11,8 +11,8 @@
 const int ThreadsPerPixel = 16;
 const int ThreadsPerBlock = 32;
 
-__global__ void render_kernel(const Scene *scene, Camera camera, RenderSettings settings, const float *texture_data, Framebuffer image) {
-    __shared__ Color sample_colors[ThreadsPerBlock];
+__global__ void render_kernel(const Scene *scene, Camera camera, RenderSettings settings,
+                              const float *texture_data, Framebuffer image) {
     // 16 threads for one pixel
     int pixel = blockIdx.x * (ThreadsPerBlock / ThreadsPerPixel) + threadIdx.x / ThreadsPerPixel;
     int sample_lane = threadIdx.x % ThreadsPerPixel;
@@ -26,18 +26,16 @@ __global__ void render_kernel(const Scene *scene, Camera camera, RenderSettings 
             color = color + trace(ray, *scene, settings, texture_data);
         }
     }
-    // all threads wait here, even outside image
-    sample_colors[threadIdx.x] = color;
-    __syncthreads();
-
-    // add colours in 8, 4, 2, 1 steps
+    // add colours in 8, 4, 2, 1 steps inside each half warp
     for (int stride = ThreadsPerPixel / 2; stride > 0; stride /= 2) {
-        if (sample_lane < stride) sample_colors[threadIdx.x] = sample_colors[threadIdx.x] + sample_colors[threadIdx.x + stride];
-        __syncthreads();
+        color.r += __shfl_down_sync(0xffffffffu, color.r, stride, ThreadsPerPixel);
+        color.g += __shfl_down_sync(0xffffffffu, color.g, stride, ThreadsPerPixel);
+        color.b += __shfl_down_sync(0xffffffffu, color.b, stride, ThreadsPerPixel);
     }
 
     // first thread store average colour
-    if (pixel < settings.width * settings.height && sample_lane == 0) store_pixel(image, pixel, sample_colors[threadIdx.x] / (float)sample_count);
+    if (pixel < settings.width * settings.height && sample_lane == 0)
+        store_pixel(image, pixel, color / (float)sample_count);
 }
 
 int main() {
