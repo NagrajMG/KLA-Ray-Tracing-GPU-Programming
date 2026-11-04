@@ -1,0 +1,6 @@
+ptxas info    : 0 bytes gmem
+ptxas info    : Compiling entry function '_Z13render_kernelPK5Scene6Camera14RenderSettingsPKf11Framebuffer' for 'sm_86'
+ptxas info    : Function properties for _Z13render_kernelPK5Scene6Camera14RenderSettingsPKf11Framebuffer
+    32 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 115 registers, used 1 barriers, 32 bytes cumulative stack size, 384 bytes smem, 472 bytes cmem[0], 8 bytes cmem[2]
+ptxas info    : Compile time = 158.831 ms
