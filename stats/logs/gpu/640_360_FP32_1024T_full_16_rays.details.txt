@@ -1,0 +1,278 @@
+Ray tracer benchmark
+Backend                 : GPU
+Tori                    : 64
+Room surfaces           : 5
+Area lights             : 2
+Resolution              : 640 x 360
+Camera samples          : 16 (4 x 4)
+Samples per light       : 8 (4 x 2)
+Reflection depth        : 3
+Geometry precision      : float
+Colour precision        : float
+Ray epsilon             : 1e-05
+Timed runs              : 5
+Warm-up runs            : 2
+Timing scope            : CUDA events; render kernels only
+Image                   : images/gpu/render.ppm
+==PROF== Connected to process 67568 (/home/dell/code/confidential/bin/raytracer_gpu)
+Kernel                  : render_kernel
+Threads per pixel       : 16
+Threads per block       : 1024
+Pixels per block        : 64
+Blocks                  : 3600
+==PROF== Profiling "render_kernel": 0%....50%....100% - 2 passes
+
+==ERROR== An error was reported by the driver
+
+==ERROR== LaunchFailed
+==PROF== Trying to shutdown target application
+==ERROR== The application returned an error code (9).
+==ERROR== An error occurred while trying to profile.
+==PROF== Report: /home/dell/code/confidential/stats/profiles/640_360_FP32_1024T_full_16_rays.details.ncu-rep
+[67568] raytracer_gpu@127.0.0.1
+  render_kernel(const Scene *, Camera, RenderSettings, const float *, Framebuffer) (0, 0, 0)x(0, 0, 0), Context 1, Stream 7, Device 0, CC 8.6
+    Section: GPU Speed Of Light Throughput
+    ----------------------- ------------ ------------
+    Metric Name              Metric Unit Metric Value
+    ----------------------- ------------ ------------
+    DRAM Frequency          cycle/second      (!) nan
+    SM Frequency            cycle/second      (!) nan
+    Elapsed Cycles                 cycle      (!) nan
+    Memory Throughput                  %      (!) nan
+    DRAM Throughput                    %      (!) nan
+    Duration                     nsecond      (!) nan
+    L1/TEX Cache Throughput            %      (!) nan
+    L2 Cache Throughput                %      (!) nan
+    SM Active Cycles               cycle      (!) nan
+    Compute (SM) Throughput            %      (!) nan
+    ----------------------- ------------ ------------
+
+    ERR   Required metric launch__waves_per_multiprocessor could not be found.                                          
+    ----- --------------------------------------------------------------------------------------------------------------
+    ERR   Rule Bottleneck returned an error: Some required metrics are missing; aborted rule execution.                 
+    ----- --------------------------------------------------------------------------------------------------------------
+    ERR   <built-in function raise_exception> returned a result with an exception set                                   
+          /root/Documents/NVIDIA Nsight Compute/2024.1.1/Sections/SpeedOfLight.py:90                                    
+          /usr/lib/x86_64-linux-gnu/nsight-compute/target/linux-desktop-glibc_2_11_3-x64/../../sections/RequestedMetrics
+          .py:231                                                                                                       
+          /usr/lib/x86_64-linux-gnu/nsight-compute/target/linux-desktop-glibc_2_11_3-x64/../../sections/NvRules.py:2834 
+
+    Section: GPU Speed Of Light Roofline Chart
+    ERR   float division by zero                                                                                        
+          /root/Documents/NVIDIA Nsight Compute/2024.1.1/Sections/SpeedOfLight_Roofline.py:99                           
+
+    Section: PM Sampling
+    ------------------------- ----------- ------------
+    Metric Name               Metric Unit Metric Value
+    ------------------------- ----------- ------------
+    Maximum Buffer Size                        (!) n/a
+    Dropped Samples                            (!) n/a
+    Maximum Sampling Interval                  (!) n/a
+    # Pass Groups                              (!) n/a
+    ------------------------- ----------- ------------
+
+    Section: Compute Workload Analysis
+    -------------------- ----------- ------------
+    Metric Name          Metric Unit Metric Value
+    -------------------- ----------- ------------
+    Executed Ipc Active   inst/cycle      (!) nan
+    Executed Ipc Elapsed  inst/cycle      (!) nan
+    Issue Slots Busy               %      (!) nan
+    Issued Ipc Active     inst/cycle      (!) nan
+    SM Busy                        %      (!) nan
+    -------------------- ----------- ------------
+
+    Section: Memory Workload Analysis
+    --------------------------- ----------- ------------
+    Metric Name                 Metric Unit Metric Value
+    --------------------------- ----------- ------------
+    Memory Throughput           byte/second      (!) nan
+    Mem Busy                              %      (!) nan
+    Max Bandwidth                         %      (!) nan
+    L1/TEX Hit Rate                       %      (!) nan
+    L2 Compression Success Rate           %      (!) nan
+    L2 Compression Ratio                             nan
+    L2 Hit Rate                           %      (!) nan
+    Mem Pipes Busy                        %      (!) nan
+    --------------------------- ----------- ------------
+
+    Section: Scheduler Statistics
+    ---------------------------- ----------- ------------
+    Metric Name                  Metric Unit Metric Value
+    ---------------------------- ----------- ------------
+    One or More Eligible                   %      (!) nan
+    Issued Warp Per Scheduler                     (!) nan
+    No Eligible                            %      (!) nan
+    Active Warps Per Scheduler          warp      (!) nan
+    Eligible Warps Per Scheduler        warp      (!) nan
+    ---------------------------- ----------- ------------
+
+    Section: Warp State Statistics
+    ---------------------------------------- ----------- ------------
+    Metric Name                              Metric Unit Metric Value
+    ---------------------------------------- ----------- ------------
+    Warp Cycles Per Issued Instruction             cycle      (!) nan
+    Warp Cycles Per Executed Instruction           cycle      (!) nan
+    Avg. Active Threads Per Warp                              (!) nan
+    Avg. Not Predicated Off Threads Per Warp                  (!) nan
+    ---------------------------------------- ----------- ------------
+
+    WRN   The optional metric smsp__pcsamp_sample_count could not be found. Collecting it as an additional metric could 
+          enable the rule to provide more guidance.                                                                     
+
+    Section: Instruction Statistics
+    ---------------------------------------- ----------- ------------
+    Metric Name                              Metric Unit Metric Value
+    ---------------------------------------- ----------- ------------
+    Avg. Executed Instructions Per Scheduler        inst      (!) nan
+    Executed Instructions                           inst      (!) nan
+    Avg. Issued Instructions Per Scheduler          inst      (!) nan
+    Issued Instructions                             inst      (!) nan
+    ---------------------------------------- ----------- ------------
+
+    ERR   Required metric sass__inst_executed_per_opcode could not be found.                                            
+    ----- --------------------------------------------------------------------------------------------------------------
+    ERR   Rule FP32/64 Instructions returned an error: Some required metrics are missing; aborted rule execution.       
+    ----- --------------------------------------------------------------------------------------------------------------
+    ERR   <built-in function raise_exception> returned a result with an exception set                                   
+          /root/Documents/NVIDIA Nsight Compute/2024.1.1/Sections/FPInstructions.py:69                                  
+          /usr/lib/x86_64-linux-gnu/nsight-compute/target/linux-desktop-glibc_2_11_3-x64/../../sections/RequestedMetrics
+          .py:231                                                                                                       
+          /usr/lib/x86_64-linux-gnu/nsight-compute/target/linux-desktop-glibc_2_11_3-x64/../../sections/NvRules.py:2834 
+
+    Section: Launch Statistics
+    -------------------------------- ----------- ------------
+    Metric Name                      Metric Unit Metric Value
+    -------------------------------- ----------- ------------
+    Block Size                                        (!) n/a
+    Function Cache Configuration                      (!) n/a
+    Grid Size                                         (!) n/a
+    Registers Per Thread                              (!) n/a
+    Shared Memory Configuration Size                  (!) n/a
+    Driver Shared Memory Per Block                    (!) n/a
+    Dynamic Shared Memory Per Block                   (!) n/a
+    Static Shared Memory Per Block                    (!) n/a
+    # SMs                                             (!) n/a
+    Threads                                           (!) n/a
+    Uses Green Context                                (!) n/a
+    Waves Per SM                                      (!) n/a
+    -------------------------------- ----------- ------------
+
+    ERR   Required metric launch__block_size could not be found.                                                        
+    ----- --------------------------------------------------------------------------------------------------------------
+    ERR   Required metric launch__grid_size could not be found.                                                         
+    ----- --------------------------------------------------------------------------------------------------------------
+    ERR   Required metric launch__waves_per_multiprocessor could not be found.                                          
+    ----- --------------------------------------------------------------------------------------------------------------
+    ERR   Required metric sm__maximum_warps_per_active_cycle_pct could not be found.                                    
+    ----- --------------------------------------------------------------------------------------------------------------
+    ERR   Rule Launch Configuration returned an error: Some required metrics are missing; aborted rule execution.       
+    ----- --------------------------------------------------------------------------------------------------------------
+    ERR   <built-in function raise_exception> returned a result with an exception set                                   
+          /root/Documents/NVIDIA Nsight Compute/2024.1.1/Sections/LaunchStatistics.py:75                                
+          /usr/lib/x86_64-linux-gnu/nsight-compute/target/linux-desktop-glibc_2_11_3-x64/../../sections/RequestedMetrics
+          .py:231                                                                                                       
+          /usr/lib/x86_64-linux-gnu/nsight-compute/target/linux-desktop-glibc_2_11_3-x64/../../sections/NvRules.py:2834 
+
+    Section: Occupancy
+    ------------------------------- ----------- ------------
+    Metric Name                     Metric Unit Metric Value
+    ------------------------------- ----------- ------------
+    Block Limit SM                                   (!) n/a
+    Block Limit Registers                            (!) n/a
+    Block Limit Shared Mem                           (!) n/a
+    Block Limit Warps                                (!) n/a
+    Theoretical Active Warps per SM                  (!) n/a
+    Theoretical Occupancy                            (!) n/a
+    Achieved Occupancy                        %      (!) nan
+    Achieved Active Warps Per SM           warp      (!) nan
+    ------------------------------- ----------- ------------
+
+    ERR   Required metric sm__maximum_warps_per_active_cycle_pct could not be found.                                    
+    ----- --------------------------------------------------------------------------------------------------------------
+    ERR   Rule Achieved Occupancy returned an error: Some required metrics are missing; aborted rule execution.         
+    ----- --------------------------------------------------------------------------------------------------------------
+    ERR   <built-in function raise_exception> returned a result with an exception set                                   
+          /root/Documents/NVIDIA Nsight Compute/2024.1.1/Sections/AchievedOccupancy.py:81                               
+          /usr/lib/x86_64-linux-gnu/nsight-compute/target/linux-desktop-glibc_2_11_3-x64/../../sections/RequestedMetrics
+          .py:231                                                                                                       
+          /usr/lib/x86_64-linux-gnu/nsight-compute/target/linux-desktop-glibc_2_11_3-x64/../../sections/NvRules.py:2834 
+    ----- --------------------------------------------------------------------------------------------------------------
+    ERR   Required metric launch__occupancy_limit_blocks could not be found.                                            
+    ----- --------------------------------------------------------------------------------------------------------------
+    ERR   Required metric launch__occupancy_limit_registers could not be found.                                         
+    ----- --------------------------------------------------------------------------------------------------------------
+    ERR   Required metric launch__occupancy_limit_shared_mem could not be found.                                        
+    ----- --------------------------------------------------------------------------------------------------------------
+    ERR   Required metric launch__occupancy_limit_warps could not be found.                                             
+    ----- --------------------------------------------------------------------------------------------------------------
+    ERR   Rule Theoretical Occupancy returned an error: Some required metrics are missing; aborted rule execution.      
+    ----- --------------------------------------------------------------------------------------------------------------
+    ERR   <built-in function raise_exception> returned a result with an exception set                                   
+          /root/Documents/NVIDIA Nsight Compute/2024.1.1/Sections/TheoreticalOccupancy.py:79                            
+          /usr/lib/x86_64-linux-gnu/nsight-compute/target/linux-desktop-glibc_2_11_3-x64/../../sections/RequestedMetrics
+          .py:231                                                                                                       
+          /usr/lib/x86_64-linux-gnu/nsight-compute/target/linux-desktop-glibc_2_11_3-x64/../../sections/NvRules.py:2834 
+
+    Section: GPU and Memory Workload Distribution
+    -------------------------- ----------- ------------
+    Metric Name                Metric Unit Metric Value
+    -------------------------- ----------- ------------
+    Average DRAM Active Cycles       cycle      (!) nan
+    Total DRAM Elapsed Cycles        cycle      (!) nan
+    Average L1 Active Cycles         cycle      (!) nan
+    Total L1 Elapsed Cycles          cycle      (!) nan
+    Average L2 Active Cycles         cycle      (!) nan
+    Total L2 Elapsed Cycles          cycle      (!) nan
+    Average SM Active Cycles         cycle      (!) nan
+    Total SM Elapsed Cycles          cycle      (!) nan
+    Average SMSP Active Cycles       cycle      (!) nan
+    Total SMSP Elapsed Cycles        cycle      (!) nan
+    -------------------------- ----------- ------------
+
+    Section: Source Counters
+    ------------------------- ----------- ------------
+    Metric Name               Metric Unit Metric Value
+    ------------------------- ----------- ------------
+    Branch Instructions Ratio           %      (!) nan
+    Branch Instructions              inst      (!) nan
+    Branch Efficiency                   %      (!) nan
+    Avg. Divergent Branches                    (!) nan
+    ------------------------- ----------- ------------
+
+    ERR   Required metric smsp__pcsamp_sample_count could not be found.                                                 
+    ----- --------------------------------------------------------------------------------------------------------------
+    ERR   Required metric smsp__pcsamp_interval_cycles could not be found.                                              
+    ----- --------------------------------------------------------------------------------------------------------------
+    ERR   Rule PC sampling data returned an error: Some required metrics are missing; aborted rule execution.           
+    ----- --------------------------------------------------------------------------------------------------------------
+    ERR   <built-in function raise_exception> returned a result with an exception set                                   
+          /root/Documents/NVIDIA Nsight Compute/2024.1.1/Sections/PCSamplingData.py:54                                  
+          /usr/lib/x86_64-linux-gnu/nsight-compute/target/linux-desktop-glibc_2_11_3-x64/../../sections/RequestedMetrics
+          .py:231                                                                                                       
+          /usr/lib/x86_64-linux-gnu/nsight-compute/target/linux-desktop-glibc_2_11_3-x64/../../sections/NvRules.py:2834 
+    ----- --------------------------------------------------------------------------------------------------------------
+    ERR   Required metric memory_l2_theoretical_sectors_global could not be found.                                      
+    ----- --------------------------------------------------------------------------------------------------------------
+    ERR   Required metric memory_l2_theoretical_sectors_global_ideal could not be found.                                
+    ----- --------------------------------------------------------------------------------------------------------------
+    ERR   Rule Uncoalesced Global Accesses returned an error: Some required metrics are missing; aborted rule execution.
+    ----- --------------------------------------------------------------------------------------------------------------
+    ERR   <built-in function raise_exception> returned a result with an exception set                                   
+          /root/Documents/NVIDIA Nsight Compute/2024.1.1/Sections/UncoalescedAccess.py:80                               
+          /usr/lib/x86_64-linux-gnu/nsight-compute/target/linux-desktop-glibc_2_11_3-x64/../../sections/RequestedMetrics
+          .py:231                                                                                                       
+          /usr/lib/x86_64-linux-gnu/nsight-compute/target/linux-desktop-glibc_2_11_3-x64/../../sections/NvRules.py:2834 
+    ----- --------------------------------------------------------------------------------------------------------------
+    ERR   Required metric memory_l1_wavefronts_shared could not be found.                                               
+    ----- --------------------------------------------------------------------------------------------------------------
+    ERR   Required metric memory_l1_wavefronts_shared_ideal could not be found.                                         
+    ----- --------------------------------------------------------------------------------------------------------------
+    ERR   Rule Uncoalesced Shared Accesses returned an error: Some required metrics are missing; aborted rule execution.
+    ----- --------------------------------------------------------------------------------------------------------------
+    ERR   <built-in function raise_exception> returned a result with an exception set                                   
+          /root/Documents/NVIDIA Nsight Compute/2024.1.1/Sections/UncoalescedSharedAccess.py:81                         
+          /usr/lib/x86_64-linux-gnu/nsight-compute/target/linux-desktop-glibc_2_11_3-x64/../../sections/RequestedMetrics
+          .py:231                                                                                                       
+          /usr/lib/x86_64-linux-gnu/nsight-compute/target/linux-desktop-glibc_2_11_3-x64/../../sections/NvRules.py:2834 
+
