@@ -168,6 +168,61 @@ HD float intersect_torus(const Ray &ray, const Torus &torus, float t_min, float 
     return -1.0f;
 }
 
+HD int intersect_tori(const Ray &ray, const Scene &scene, float t_min, float &t_max) {
+    // each torus inside own cell, first hit is nearest
+    float half_x = 0.5f * TorusColumns * TorusSpacing;
+    float half_z = 0.5f * TorusRows * TorusSpacing;
+    float enter = t_min;
+    float exit = t_max;
+    for (int axis = 0; axis < 2; ++axis) {
+        float origin = axis == 0 ? ray.origin.x : ray.origin.z;
+        float direction = axis == 0 ? ray.direction.x : ray.direction.z;
+        float half = axis == 0 ? half_x : half_z;
+        if (direction == 0.0f) {
+            if (fabsf(origin) > half)
+                return -1;
+        } else {
+            float first = (-half - origin) / direction;
+            float last = (half - origin) / direction;
+            enter = fmaxf(enter, fminf(first, last));
+            exit = fminf(exit, fmaxf(first, last));
+        }
+    }
+    if (enter > exit)
+        return -1;
+
+    Vec3 entry = ray.origin + ray.direction * enter;
+    int column = (int)fminf(TorusColumns - 1, fmaxf(0.0f, floorf((entry.x + half_x) / TorusSpacing)));
+    int row = (int)fminf(TorusRows - 1, fmaxf(0.0f, floorf((entry.z + half_z) / TorusSpacing)));
+    int step_x = ray.direction.x < 0.0f ? -1 : 1;
+    int step_z = ray.direction.z < 0.0f ? -1 : 1;
+    float delta_x = ray.direction.x == 0.0f ? FLT_MAX : TorusSpacing / fabsf(ray.direction.x);
+    float delta_z = ray.direction.z == 0.0f ? FLT_MAX : TorusSpacing / fabsf(ray.direction.z);
+    float next_x = ray.direction.x == 0.0f ? FLT_MAX : ((column + (step_x > 0)) * TorusSpacing - half_x - ray.origin.x) / ray.direction.x;
+    float next_z = ray.direction.z == 0.0f ? FLT_MAX : ((row + (step_z > 0)) * TorusSpacing - half_z - ray.origin.z) / ray.direction.z;
+    while (column >= 0 && column < TorusColumns && row >= 0 && row < TorusRows) {
+        int index = row * TorusColumns + column;
+        float t = intersect_torus(ray, scene.tori[index], t_min, t_max);
+        if (t >= 0.0f) {
+            t_max = t;
+            return index;
+        }
+        float boundary = fminf(next_x, next_z);
+        if (boundary >= exit)
+            break;
+        // at a corner, move in both directions
+        if (next_x == boundary) {
+            column += step_x;
+            next_x += delta_x;
+        }
+        if (next_z == boundary) {
+            row += step_z;
+            next_z += delta_z;
+        }
+    }
+    return -1;
+}
+
 HD float intersect_rectangle(const Ray &ray, const Rectangle &rectangle, float t_min, float t_max,
                              float &u, float &v) {
     Vec3 normal = rectangle.normal;
@@ -193,11 +248,7 @@ HD bool occluded(const Ray &ray, const Scene &scene, float t_min, float t_max) {
         if (intersect_rectangle(ray, scene.lights[i].surface, t_min, t_max, u, v) >= 0.0f)
             return true;
     }
-    for (int i = 0; i < TorusCount; ++i) {
-        if (intersect_torus(ray, scene.tori[i], t_min, t_max) >= 0.0f)
-            return true;
-    }
-    return false;
+    return intersect_tori(ray, scene, t_min, t_max) >= 0;
 }
 
 HD Hit intersect_scene(const Ray &ray, const Scene &scene, float t_min, float t_max) {
@@ -205,16 +256,10 @@ HD Hit intersect_scene(const Ray &ray, const Scene &scene, float t_min, float t_
     hit.t = t_max;
     hit.material_index = -1;
     hit.light_index = -1;
-    int torus_index = -1;
+    int torus_index = intersect_tori(ray, scene, t_min, hit.t);
     int rectangle_index = -1;
-    for (int i = 0; i < TorusCount; ++i) {
-        float t = intersect_torus(ray, scene.tori[i], t_min, hit.t);
-        if (t < 0.0f)
-            continue;
-        hit.t = t;
-        hit.material_index = scene.tori[i].material_index;
-        torus_index = i;
-    }
+    if (torus_index >= 0)
+        hit.material_index = scene.tori[torus_index].material_index;
     for (int i = 0; i < RectangleCount; ++i) {
         float u, v;
         float t = intersect_rectangle(ray, scene.rectangles[i], t_min, hit.t, u, v);

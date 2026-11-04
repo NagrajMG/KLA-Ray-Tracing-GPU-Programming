@@ -3,7 +3,6 @@
 #include "camera.h"
 #include "texture.h"
 
-const float TorusSpacing = 3.3f;
 const float RoomHalfWidth = 0.5f * TorusColumns * TorusSpacing + 2.0f;
 const float RoomHalfDepth = 0.5f * TorusRows * TorusSpacing + 2.0f;
 const float RoomHeight = 14.0f;

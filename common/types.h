@@ -12,6 +12,7 @@ constexpr float pi = 3.14159265358979323846f;
 const int TorusRows = 8;
 const int TorusColumns = 8;
 const int TorusCount = TorusRows * TorusColumns;
+const float TorusSpacing = 3.3f;
 const int RectangleCount = 5;
 const int LightCount = 2;
 const int LightSamplesX = 4;
