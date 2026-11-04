@@ -39,7 +39,24 @@ HD float largest_cubic_root(float a, float b, float c) {
     return 2.0f * radius * cosf(angle) - a / 3.0f;
 }
 
-HD int solve_quartic(float a4, float a3, float a2, float a1, float a0, float roots[4]) {
+struct QuarticRoots {
+    float r0;
+    float r1;
+    float r2;
+    float r3;
+};
+
+HD void sort_pair(float &a, float &b) {
+    if (b < a) {
+        float temporary = a;
+        a = b;
+        b = temporary;
+    }
+}
+
+HD int solve_quartic(float a4, float a3, float a2, float a1, float a0, QuarticRoots &roots) {
+    // empty slots go to end after sorting
+    roots = {FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX};
     float a = a3 / a4;
     float b = a2 / a4;
     float c = a1 / a4;
@@ -55,9 +72,16 @@ HD int solve_quartic(float a4, float a3, float a2, float a1, float a0, float roo
             if (pair[i] < 0.0f)
                 continue;
             float root = sqrtf(pair[i]);
-            roots[count++] = root - a / 4.0f;
-            if (root != 0.0f)
-                roots[count++] = -root - a / 4.0f;
+            if (i == 0) {
+                roots.r0 = root - a / 4.0f;
+                if (root != 0.0f)
+                    roots.r1 = -root - a / 4.0f;
+            } else {
+                roots.r2 = root - a / 4.0f;
+                if (root != 0.0f)
+                    roots.r3 = -root - a / 4.0f;
+            }
+            count += root == 0.0f ? 1 : 2;
         }
     } else {
         float cubic_a = 2.0f * p;
@@ -83,21 +107,24 @@ HD int solve_quartic(float a4, float a3, float a2, float a1, float a0, float roo
             return 0;
         float s = sqrtf(z);
         int first = solve_quadratic(1.0f, s, (p + z - q / s) / 2.0f, pair);
-        for (int i = 0; i < first; ++i)
-            roots[count++] = pair[i] - a / 4.0f;
+        if (first > 0)
+            roots.r0 = pair[0] - a / 4.0f;
+        if (first > 1)
+            roots.r1 = pair[1] - a / 4.0f;
         int second = solve_quadratic(1.0f, -s, (p + z + q / s) / 2.0f, pair);
-        for (int i = 0; i < second; ++i)
-            roots[count++] = pair[i] - a / 4.0f;
+        if (second > 0)
+            roots.r2 = pair[0] - a / 4.0f;
+        if (second > 1)
+            roots.r3 = pair[1] - a / 4.0f;
+        count = first + second;
     }
-    for (int i = 1; i < count; ++i) {
-        float root = roots[i];
-        int j = i;
-        while (j > 0 && root < roots[j - 1]) {
-            roots[j] = roots[j - 1];
-            --j;
-        }
-        roots[j] = root;
-    }
+    if (count == 0)
+        return 0;
+    sort_pair(roots.r0, roots.r1);
+    sort_pair(roots.r2, roots.r3);
+    sort_pair(roots.r0, roots.r2);
+    sort_pair(roots.r1, roots.r3);
+    sort_pair(roots.r1, roots.r2);
     return count;
 }
 
@@ -143,10 +170,10 @@ HD float intersect_torus(const Ray &ray, const Torus &torus, float t_min, float 
     float a1 = 2.0f * g1 * radial + 2.0f * k * origin.y * direction.y;
     float a0 =
         ((rho - major) * (rho - major) + vertical) * ((rho + major) * (rho + major) + vertical);
-    float roots[4];
+    QuarticRoots roots;
     int count = solve_quartic(a4, a3, a2, a1, a0, roots);
     for (int i = 0; i < count; ++i) {
-        float root = roots[i];
+        float root = i == 0 ? roots.r0 : i == 1 ? roots.r1 : i == 2 ? roots.r2 : roots.r3;
         float value = (((a4 * root + a3) * root + a2) * root + a1) * root + a0;
         while (true) {
             float slope = ((4.0f * a4 * root + 3.0f * a3) * root + 2.0f * a2) * root + a1;
@@ -192,14 +219,21 @@ HD int intersect_tori(const Ray &ray, const Scene &scene, float t_min, float &t_
         return -1;
 
     Vec3 entry = ray.origin + ray.direction * enter;
-    int column = (int)fminf(TorusColumns - 1, fmaxf(0.0f, floorf((entry.x + half_x) / TorusSpacing)));
+    int column =
+        (int)fminf(TorusColumns - 1, fmaxf(0.0f, floorf((entry.x + half_x) / TorusSpacing)));
     int row = (int)fminf(TorusRows - 1, fmaxf(0.0f, floorf((entry.z + half_z) / TorusSpacing)));
     int step_x = ray.direction.x < 0.0f ? -1 : 1;
     int step_z = ray.direction.z < 0.0f ? -1 : 1;
     float delta_x = ray.direction.x == 0.0f ? FLT_MAX : TorusSpacing / fabsf(ray.direction.x);
     float delta_z = ray.direction.z == 0.0f ? FLT_MAX : TorusSpacing / fabsf(ray.direction.z);
-    float next_x = ray.direction.x == 0.0f ? FLT_MAX : ((column + (step_x > 0)) * TorusSpacing - half_x - ray.origin.x) / ray.direction.x;
-    float next_z = ray.direction.z == 0.0f ? FLT_MAX : ((row + (step_z > 0)) * TorusSpacing - half_z - ray.origin.z) / ray.direction.z;
+    float next_x =
+        ray.direction.x == 0.0f
+            ? FLT_MAX
+            : ((column + (step_x > 0)) * TorusSpacing - half_x - ray.origin.x) / ray.direction.x;
+    float next_z =
+        ray.direction.z == 0.0f
+            ? FLT_MAX
+            : ((row + (step_z > 0)) * TorusSpacing - half_z - ray.origin.z) / ray.direction.z;
     while (column >= 0 && column < TorusColumns && row >= 0 && row < TorusRows) {
         int index = row * TorusColumns + column;
         float t = intersect_torus(ray, scene.tori[index], t_min, t_max);
