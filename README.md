@@ -43,4 +43,21 @@ flowchart TD
 9. Cached ray measurements, refreshing them when torus orientation changes.
 10. Cached inverse length for scale multiplication; kept shift division after grazing-ray regressions.
 
-Height clipping and ray caching await GPU measurements.
+## Measured progression
+
+640 × 360, 64 tori, 16 camera samples, two lights × eight samples, three reflections.
+
+| GPU stage | Threads/pixel | Threads/block | Render (ms) | Registers/thread | Profile instructions (billions) |
+|---|---:|---:|---:|---:|---:|
+| FP64 baseline | 1 | 256 | — | 186 | — |
+| FP32 baseline | 1 | 256 | 347.115 | 109 | 29.411 |
+| Block tuning | 1 | 32 | 312.647 | 109 | 29.411 |
+| Precomputation + parallel samples | 16 | 32 | 223.044 | 113 | 21.084 |
+| Uniform grid | 16 | 32 | 56.858 | 119 | 5.143 |
+| Scalar quartic roots | 16 | 32 | 55.563 | 115 | — |
+| Shuffle trial, rejected | 16 | 32 | 56.689 | 115 | 5.152 |
+| Height clipping + ray caching | 16 | 32 | 47.915 | 123 | 3.174 |
+| Final block tuning | 16 | 64 | **36.857** | 123 | 3.174 |
+| Final block tuning | 16 | 128 | 38.414 | 123 | 3.174 |
+| Final block tuning | 16 | 256 | 42.309 | — | — |
+| Final block tuning | 16 | 512 | 51.339 | — | — |
