@@ -3,12 +3,21 @@
 #include "camera.h"
 #include "texture.h"
 
+#include <cfloat>
+
 const float RoomHalfWidth = 0.5f * TorusColumns * TorusSpacing + 2.0f;
 const float RoomHalfDepth = 0.5f * TorusRows * TorusSpacing + 2.0f;
 const float RoomHeight = 14.0f;
 const float FloorFront = 30.0f; // Camera at 24.0
 
-RenderSettings configuration() { return {640, 360, 4, 4, 3, 5, 1e-5f}; }
+RenderSettings configuration() {
+#ifdef RT_FP16_GEOMETRY
+    // 1e-5 cannot move FP16 world-space coordinates near the room boundaries.
+    return {640, 360, 4, 4, 3, 5, 0.03125f};
+#else
+    return {640, 360, 4, 4, 3, 5, 1e-5f};
+#endif
+}
 
 Camera scene_camera(const RenderSettings &settings) {
     return make_camera({0.5f, 9, 24}, {0, 2, -3}, {0, 1, 0}, 62, settings.width, settings.height);
@@ -81,11 +90,13 @@ Rectangle make_rectangle(Vec3 corner, Vec3 edge_u, Vec3 edge_v, int material_ind
             1.0f / dot(edge_v, edge_v)};
 }
 
-Scene make_scene(std::vector<float> &texture_data) {
+Scene make_scene(std::vector<ColorScalar> &texture_data) {
     Scene scene{};
     make_materials(scene.materials);
     make_textures(scene.textures, texture_data);
 
+    scene.torus_min_y = FLT_MAX;
+    scene.torus_max_y = -FLT_MAX;
     float tube_radii[3] = {0.16f, 0.26f, 0.38f};
     for (int row = 0; row < TorusRows; ++row) {
         for (int column = 0; column < TorusColumns; ++column) {
@@ -101,6 +112,11 @@ Scene make_scene(std::vector<float> &texture_data) {
             scene.tori[index] = {
                 {x, y, z}, major_radius,          orientation,          MetalMaterial + index % 3,
                 radius,    major_radius / radius, minor_radius / radius};
+            float height = orientation == Flat ? minor_radius : radius;
+            // Expand the slab to keep grazing rays inside despite float rounding.
+            float padding = 32.0f * RealEpsilon * fmaxf(1.0f, fabsf(y) + height);
+            scene.torus_min_y = fminf(scene.torus_min_y, y - height - padding);
+            scene.torus_max_y = fmaxf(scene.torus_max_y, y + height + padding);
         }
     }
 

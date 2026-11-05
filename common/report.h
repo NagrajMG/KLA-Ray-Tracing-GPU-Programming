@@ -19,8 +19,18 @@ void print_report_header(const char *backend, const RenderSettings &settings, in
               << "Samples per light       : " << LightSampleCount << " (" << LightSamplesX << " x "
               << LightSamplesY << ")\n"
               << "Reflection depth        : " << settings.reflection_depth << '\n'
-              << "Geometry precision      : float\n"
-              << "Colour precision        : float\n"
+              << "Geometry precision      : "
+#ifdef RT_FP16_GEOMETRY
+              << "FP16; FP32 normalization and math functions rounded to FP16\n"
+#else
+              << "FP32\n"
+#endif
+              << "Colour precision        : "
+#ifdef RT_FP16_COLORS
+              << "FP16 (including textures, accumulation and framebuffer)\n"
+#else
+              << "FP32\n"
+#endif
               << "Ray epsilon             : " << settings.ray_epsilon << '\n'
               << "Timed runs              : " << settings.runs << '\n'
               << "Warm-up runs            : " << warmup_runs << '\n'

@@ -7,13 +7,13 @@
 #include <cfloat>
 
 HD Color surface_color(const Hit &hit, const Material &material, const Scene &scene,
-                       const float *texture_data) {
+                       const ColorScalar *texture_data) {
     // base color
     Color color = material.albedo;
     // floors are non-negative
     if (material.color_texture >= 0) {
-        float u = hit.u * material.repeat_u;
-        float v = hit.v * material.repeat_v;
+        Real u = hit.u * material.repeat_u;
+        Real v = hit.v * material.repeat_v;
         Color texel = sample_texture(scene.textures[material.color_texture], texture_data, u, v);
         color = color * texel;
     }
@@ -23,7 +23,7 @@ HD Color surface_color(const Hit &hit, const Material &material, const Scene &sc
 // does not hit any object
 HD Color background(Vec3 direction) {
     // -1 dark, 0 neutral, 1 blue based type
-    float blend = 0.5f * (direction.y + 1.0f);
+    Real blend = 0.5f * (direction.y + 1.0f);
     return Color{0.12f, 0.14f, 0.18f} * (1.0f - blend) + Color{0.38f, 0.50f, 0.70f} * blend;
 }
 
@@ -40,14 +40,14 @@ HD Color illuminate(const Hit &hit, Color albedo, const Material &material, Vec3
 
         for (int sample = 0; sample < LightSampleCount; sample++) {
             Vec3 to_light = light.samples[sample] - origin;
-            float cosine = dot(hit.normal, to_light);
-            float light_cosine = -dot(light.normal, to_light);
+            Real cosine = dot(hit.normal, to_light);
+            Real light_cosine = -dot(light.normal, to_light);
             if (cosine <= 0.0f || light_cosine <= 0.0f)
                 continue;
 
-            float distance_squared = dot(to_light, to_light);
-            float distance = sqrtf(distance_squared);
-            float inverse_distance = 1.0f / distance;
+            Real distance_squared = dot(to_light, to_light);
+            Real distance = real_sqrt(distance_squared);
+            Real inverse_distance = 1.0f / distance;
             Vec3 light_direction = to_light * inverse_distance;
             cosine *= inverse_distance;
             light_cosine *= inverse_distance;
@@ -61,13 +61,13 @@ HD Color illuminate(const Hit &hit, Color albedo, const Material &material, Vec3
             if (has_specular) {
                 Vec3 half_vector = light_direction + view_direction;
                 if (dot(half_vector, half_vector) > 0.0f) { // non zero
-                    float alignment = fmaxf(0.0f, dot(hit.normal, normalize(half_vector)));
+                    Real alignment = real_max(0.0f, dot(hit.normal, normalize(half_vector)));
                     specular = material.specular * powf(alignment, material.shininess);
                 }
             }
 
             Color diffuse = albedo * (material.diffuse * cosine);
-            float weight = light.area * light_cosine / (pi * distance_squared * LightSampleCount);
+            Real weight = light.area * light_cosine / (pi * distance_squared * LightSampleCount);
             color = color + (diffuse + specular) * light.emission * weight;
         }
     }
@@ -76,12 +76,12 @@ HD Color illuminate(const Hit &hit, Color albedo, const Material &material, Vec3
 }
 
 HD Color trace(Ray ray, const Scene &scene, const RenderSettings &settings,
-               const float *texture_data) {
+               const ColorScalar *texture_data) {
     Color color{0.0f, 0.0f, 0.0f};
     Color throughput{1.0f, 1.0f, 1.0f};
 
     for (int depth = 0; depth <= settings.reflection_depth; depth++) {
-        Hit hit = intersect_scene(ray, scene, settings.ray_epsilon, FLT_MAX);
+        Hit hit = intersect_scene(ray, scene, settings.ray_epsilon, RealMax);
 
         if (hit.material_index < 0 && hit.light_index < 0) {
             color = color + throughput * background(ray.direction);
@@ -113,7 +113,7 @@ HD Color trace(Ray ray, const Scene &scene, const RenderSettings &settings,
 }
 
 HD Color render_pixel(const Scene &scene, const Camera &camera, const RenderSettings &settings,
-                      const float *texture_data, int pixel) {
+                      const ColorScalar *texture_data, int pixel) {
     Color color{0.0f, 0.0f, 0.0f};
     int sample_count = settings.camera_samples_x * settings.camera_samples_y;
 
@@ -122,7 +122,7 @@ HD Color render_pixel(const Scene &scene, const Camera &camera, const RenderSett
         color = color + trace(ray, scene, settings, texture_data);
     }
 
-    return color / (float)sample_count;
+    return color / (Real)sample_count;
 }
 
 HD void store_pixel(Framebuffer image, int pixel, Color color) {
