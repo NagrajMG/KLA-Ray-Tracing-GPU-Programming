@@ -201,6 +201,18 @@ HD int intersect_tori(const Ray &ray, const Scene &scene, float t_min, float &t_
     float half_z = 0.5f * TorusRows * TorusSpacing;
     float enter = t_min;
     float exit = t_max;
+    // Restrict the grid walk to heights occupied by tori, especially for shadow rays.
+    if (ray.direction.y == 0.0f) {
+        if (ray.origin.y < scene.torus_min_y || ray.origin.y > scene.torus_max_y)
+            return -1;
+    } else {
+        float first = (scene.torus_min_y - ray.origin.y) / ray.direction.y;
+        float last = (scene.torus_max_y - ray.origin.y) / ray.direction.y;
+        enter = fmaxf(enter, fminf(first, last));
+        exit = fminf(exit, fmaxf(first, last));
+    }
+    if (enter > exit)
+        return -1;
     for (int axis = 0; axis < 2; ++axis) {
         float origin = axis == 0 ? ray.origin.x : ray.origin.z;
         float direction = axis == 0 ? ray.direction.x : ray.direction.z;

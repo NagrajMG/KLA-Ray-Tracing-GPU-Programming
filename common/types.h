@@ -119,6 +119,8 @@ struct AreaLight {
 
 struct Scene {
     Torus tori[TorusCount];
+    float torus_min_y;
+    float torus_max_y;
     Rectangle rectangles[RectangleCount];
     Material materials[MaterialCount];
     AreaLight lights[LightCount];

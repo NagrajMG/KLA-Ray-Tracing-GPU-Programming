@@ -3,6 +3,8 @@
 #include "camera.h"
 #include "texture.h"
 
+#include <cfloat>
+
 const float RoomHalfWidth = 0.5f * TorusColumns * TorusSpacing + 2.0f;
 const float RoomHalfDepth = 0.5f * TorusRows * TorusSpacing + 2.0f;
 const float RoomHeight = 14.0f;
@@ -86,6 +88,8 @@ Scene make_scene(std::vector<float> &texture_data) {
     make_materials(scene.materials);
     make_textures(scene.textures, texture_data);
 
+    scene.torus_min_y = FLT_MAX;
+    scene.torus_max_y = -FLT_MAX;
     float tube_radii[3] = {0.16f, 0.26f, 0.38f};
     for (int row = 0; row < TorusRows; ++row) {
         for (int column = 0; column < TorusColumns; ++column) {
@@ -101,6 +105,11 @@ Scene make_scene(std::vector<float> &texture_data) {
             scene.tori[index] = {
                 {x, y, z}, major_radius,          orientation,          MetalMaterial + index % 3,
                 radius,    major_radius / radius, minor_radius / radius};
+            float height = orientation == Flat ? minor_radius : radius;
+            // Expand the slab to keep grazing rays inside despite float rounding.
+            float padding = 32.0f * FLT_EPSILON * fmaxf(1.0f, fabsf(y) + height);
+            scene.torus_min_y = fminf(scene.torus_min_y, y - height - padding);
+            scene.torus_max_y = fmaxf(scene.torus_max_y, y + height + padding);
         }
     }
 
