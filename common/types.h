@@ -123,6 +123,8 @@ struct Scene {
     Material materials[MaterialCount];
     AreaLight lights[LightCount];
     Texture textures[TextureCount];
+    float torus_min_y;
+    float torus_max_y;
 };
 
 struct Hit {
