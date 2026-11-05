@@ -3,6 +3,8 @@
 #include "camera.h"
 #include "texture.h"
 
+#include <cfloat>
+
 const float RoomHalfWidth = 0.5f * TorusColumns * TorusSpacing + 2.0f;
 const float RoomHalfDepth = 0.5f * TorusRows * TorusSpacing + 2.0f;
 const float RoomHeight = 14.0f;
@@ -86,6 +88,8 @@ Scene make_scene(std::vector<float> &texture_data) {
     make_materials(scene.materials);
     make_textures(scene.textures, texture_data);
 
+    scene.torus_min_y = FLT_MAX;
+    scene.torus_max_y = -FLT_MAX;
     float tube_radii[3] = {0.16f, 0.26f, 0.38f};
     for (int row = 0; row < TorusRows; ++row) {
         for (int column = 0; column < TorusColumns; ++column) {
@@ -98,11 +102,23 @@ Scene make_scene(std::vector<float> &texture_data) {
             float z = (row - 0.5f * (TorusRows - 1)) * TorusSpacing;
             int index = row * TorusColumns + column;
             float radius = major_radius + minor_radius;
-            scene.tori[index] = {
+            Torus &torus = scene.tori[index];
+            torus = {
                 {x, y, z}, major_radius,          orientation,          MetalMaterial + index % 3,
                 radius,    major_radius / radius, minor_radius / radius};
+            float scaled_height =
+                orientation == Flat
+                    ? torus.scaled_minor_radius
+                    : nextafterf(torus.scaled_major_radius + torus.scaled_minor_radius, FLT_MAX);
+            float half_height = nextafterf(radius * scaled_height, FLT_MAX);
+            scene.torus_min_y = fminf(scene.torus_min_y, y - half_height);
+            scene.torus_max_y = fmaxf(scene.torus_max_y, y + half_height);
         }
     }
+
+    // round bounds outward so edge points stay inside
+    scene.torus_min_y = nextafterf(scene.torus_min_y, -FLT_MAX);
+    scene.torus_max_y = nextafterf(scene.torus_max_y, FLT_MAX);
 
     scene.rectangles[0] = make_rectangle({-RoomHalfWidth, 0, FloorFront}, {2.0f * RoomHalfWidth, 0, 0}, {0, 0, -FloorFront - RoomHalfDepth}, FloorMaterial);
     scene.rectangles[1] = make_rectangle({-RoomHalfWidth, RoomHeight, -RoomHalfDepth}, {2.0f * RoomHalfWidth, 0, 0}, {0, 0, 2.0f * RoomHalfDepth}, WallMaterial);

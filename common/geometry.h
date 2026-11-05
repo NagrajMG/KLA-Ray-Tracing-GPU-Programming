@@ -136,16 +136,27 @@ HD Vec3 torus_world(Vec3 vector, TorusOrientation orientation) {
     return orientation == Flat ? vector : Vec3{vector.x, -vector.z, vector.y};
 }
 
-HD float intersect_torus(const Ray &ray, const Torus &torus, float t_min, float t_max) {
+struct RayMeasurements {
+    float length_squared;
+    float inverse_length;
+    Vec3 unit_direction;
+};
+
+HD RayMeasurements measure_direction(Vec3 direction) {
+    float length_squared = dot(direction, direction);
+    float inverse_length = 1.0f / sqrtf(length_squared);
+    return {length_squared, inverse_length, direction * inverse_length};
+}
+
+HD float intersect_torus(const Ray &ray, const Torus &torus, const RayMeasurements &measurements,
+                         float t_min, float t_max) {
     Vec3 relative = torus_local(ray.origin - torus.center, torus.orientation);
     Vec3 ray_direction = torus_local(ray.direction, torus.orientation);
-    float direction_squared = dot(ray_direction, ray_direction);
-    float direction_length = sqrtf(direction_squared);
     float radius = torus.radius;
-    float shift = -dot(relative, ray_direction) / direction_squared;
-    float parameter_scale = radius / direction_length;
+    float shift = -dot(relative, ray_direction) / measurements.length_squared;
+    float parameter_scale = radius * measurements.inverse_length;
     Vec3 origin = (relative + ray_direction * shift) / radius;
-    Vec3 direction = ray_direction / direction_length;
+    Vec3 direction = measurements.unit_direction;
     float distance_squared = dot(origin, origin);
     float span_squared = 1.0f - distance_squared;
     if (span_squared < -FLT_EPSILON * (1.0f + distance_squared))
@@ -201,16 +212,19 @@ HD int intersect_tori(const Ray &ray, const Scene &scene, float t_min, float &t_
     float half_z = 0.5f * TorusRows * TorusSpacing;
     float enter = t_min;
     float exit = t_max;
-    for (int axis = 0; axis < 2; ++axis) {
-        float origin = axis == 0 ? ray.origin.x : ray.origin.z;
-        float direction = axis == 0 ? ray.direction.x : ray.direction.z;
-        float half = axis == 0 ? half_x : half_z;
+    for (int axis = 0; axis < 3; ++axis) {
+        float origin = axis == 0 ? ray.origin.x : axis == 1 ? ray.origin.z : ray.origin.y;
+        float direction = axis == 0   ? ray.direction.x
+                          : axis == 1 ? ray.direction.z
+                                      : ray.direction.y;
+        float lower = axis == 0 ? -half_x : axis == 1 ? -half_z : scene.torus_min_y;
+        float upper = axis == 0 ? half_x : axis == 1 ? half_z : scene.torus_max_y;
         if (direction == 0.0f) {
-            if (fabsf(origin) > half)
+            if (origin < lower || origin > upper)
                 return -1;
         } else {
-            float first = (-half - origin) / direction;
-            float last = (half - origin) / direction;
+            float first = (lower - origin) / direction;
+            float last = (upper - origin) / direction;
             enter = fmaxf(enter, fminf(first, last));
             exit = fminf(exit, fmaxf(first, last));
         }
@@ -234,9 +248,12 @@ HD int intersect_tori(const Ray &ray, const Scene &scene, float t_min, float &t_
         ray.direction.z == 0.0f
             ? FLT_MAX
             : ((row + (step_z > 0)) * TorusSpacing - half_z - ray.origin.z) / ray.direction.z;
+    // each row has one orientation in this scene
+    TorusOrientation orientation = scene.tori[row * TorusColumns].orientation;
+    RayMeasurements measurements = measure_direction(torus_local(ray.direction, orientation));
     while (column >= 0 && column < TorusColumns && row >= 0 && row < TorusRows) {
         int index = row * TorusColumns + column;
-        float t = intersect_torus(ray, scene.tori[index], t_min, t_max);
+        float t = intersect_torus(ray, scene.tori[index], measurements, t_min, t_max);
         if (t >= 0.0f) {
             t_max = t;
             return index;
@@ -252,6 +269,13 @@ HD int intersect_tori(const Ray &ray, const Scene &scene, float t_min, float &t_
         if (next_z == boundary) {
             row += step_z;
             next_z += delta_z;
+            if (row < 0 || row >= TorusRows)
+                break;
+            TorusOrientation next_orientation = scene.tori[row * TorusColumns].orientation;
+            if (next_orientation != orientation) {
+                orientation = next_orientation;
+                measurements = measure_direction(torus_local(ray.direction, orientation));
+            }
         }
     }
     return -1;
