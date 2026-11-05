@@ -27,52 +27,78 @@ HD Color background(Vec3 direction) {
     return Color{0.12f, 0.14f, 0.18f} * (1.0f - blend) + Color{0.38f, 0.50f, 0.70f} * blend;
 }
 
-// from 2 area lights including the shadow
+struct LightSample {
+    Vec3 direction;
+    float distance;
+    float distance_squared;
+    float cosine;
+    float light_cosine;
+};
+
+HD bool sample_light(Vec3 origin, Vec3 normal, const AreaLight &light, int sample,
+                     LightSample &lighting) {
+    Vec3 to_light = light.samples[sample] - origin;
+    float cosine = dot(normal, to_light);
+    float light_cosine = -dot(light.normal, to_light);
+    if (cosine <= 0.0f || light_cosine <= 0.0f)
+        return false;
+    float distance_squared = dot(to_light, to_light);
+    float distance = sqrtf(distance_squared);
+    float inverse_distance = 1.0f / distance;
+    lighting = {to_light * inverse_distance, distance, distance_squared, cosine * inverse_distance,
+                light_cosine * inverse_distance};
+    return true;
+}
+
+template <bool TraceShadows = true>
 HD Color illuminate(const Hit &hit, Color albedo, const Material &material, Vec3 view_direction,
-                    const Scene &scene, const RenderSettings &settings) {
+                    const Scene &scene, const RenderSettings &settings,
+                    unsigned visibility = 0xffffffffu) {
     Color color = albedo * (0.03f * material.diffuse);
     Vec3 origin = hit.point + hit.normal * settings.ray_epsilon;
     bool has_specular =
         material.specular.r != 0.0f || material.specular.g != 0.0f || material.specular.b != 0.0f;
-
     for (int light_index = 0; light_index < LightCount; light_index++) {
         const AreaLight &light = scene.lights[light_index];
-
         for (int sample = 0; sample < LightSampleCount; sample++) {
-            Vec3 to_light = light.samples[sample] - origin;
-            float cosine = dot(hit.normal, to_light);
-            float light_cosine = -dot(light.normal, to_light);
-            if (cosine <= 0.0f || light_cosine <= 0.0f)
+            int bit = light_index * LightSampleCount + sample;
+            if (!(visibility & (1u << bit)))
                 continue;
-
-            float distance_squared = dot(to_light, to_light);
-            float distance = sqrtf(distance_squared);
-            float inverse_distance = 1.0f / distance;
-            Vec3 light_direction = to_light * inverse_distance;
-            cosine *= inverse_distance;
-            light_cosine *= inverse_distance;
-
-            // check if something blocks the light
-            Ray shadow_ray{origin, light_direction};
-            if (occluded(shadow_ray, scene, settings.ray_epsilon, distance - settings.ray_epsilon))
+            LightSample lighting;
+            if (!sample_light(origin, hit.normal, light, sample, lighting))
                 continue;
-
+            if constexpr (TraceShadows) {
+                if (occluded({origin, lighting.direction}, scene, settings.ray_epsilon,
+                             lighting.distance - settings.ray_epsilon))
+                    continue;
+            }
             Color specular{0.0f, 0.0f, 0.0f};
             if (has_specular) {
-                Vec3 half_vector = light_direction + view_direction;
-                if (dot(half_vector, half_vector) > 0.0f) { // non zero
+                Vec3 half_vector = lighting.direction + view_direction;
+                if (dot(half_vector, half_vector) > 0.0f) {
                     float alignment = fmaxf(0.0f, dot(hit.normal, normalize(half_vector)));
                     specular = material.specular * powf(alignment, material.shininess);
                 }
             }
-
-            Color diffuse = albedo * (material.diffuse * cosine);
-            float weight = light.area * light_cosine / (pi * distance_squared * LightSampleCount);
+            Color diffuse = albedo * (material.diffuse * lighting.cosine);
+            float weight = light.area * lighting.light_cosine /
+                           (pi * lighting.distance_squared * LightSampleCount);
             color = color + (diffuse + specular) * light.emission * weight;
         }
     }
-
     return color;
+}
+
+HD Color emitted_color(const Ray &ray, const Hit &hit, const Scene &scene) {
+    if (hit.light_index < 0)
+        return background(ray.direction);
+    const AreaLight &light = scene.lights[hit.light_index];
+    return dot(ray.direction, light.surface.normal) < 0.0f ? light.emission
+                                                           : Color{0.0f, 0.0f, 0.0f};
+}
+
+HD Ray reflected_ray(const Hit &hit, Vec3 direction, float epsilon) {
+    return {hit.point + hit.normal * epsilon, normalize(reflect(direction, hit.normal))};
 }
 
 HD Color trace(Ray ray, const Scene &scene, const RenderSettings &settings,
@@ -83,16 +109,8 @@ HD Color trace(Ray ray, const Scene &scene, const RenderSettings &settings,
     for (int depth = 0; depth <= settings.reflection_depth; depth++) {
         Hit hit = intersect_scene(ray, scene, settings.ray_epsilon, FLT_MAX);
 
-        if (hit.material_index < 0 && hit.light_index < 0) {
-            color = color + throughput * background(ray.direction);
-            break;
-        }
-
-        // hit by a light rectangle
-        if (hit.light_index >= 0) {
-            const AreaLight &light = scene.lights[hit.light_index];
-            if (dot(ray.direction, light.surface.normal) < 0.0f)
-                color = color + throughput * light.emission;
+        if (hit.material_index < 0) {
+            color = color + throughput * emitted_color(ray, hit, scene);
             break;
         }
 
@@ -105,8 +123,7 @@ HD Color trace(Ray ray, const Scene &scene, const RenderSettings &settings,
             break;
 
         throughput = throughput * material.specular * material.reflectivity;
-        Vec3 direction = reflect(ray.direction, hit.normal);
-        ray = {hit.point + hit.normal * settings.ray_epsilon, normalize(direction)};
+        ray = reflected_ray(hit, ray.direction, settings.ray_epsilon);
     }
 
     return color;
