@@ -9,7 +9,7 @@
 #include <vector>
 
 const int ThreadsPerPixel = 16;
-const int ThreadsPerBlock = 32;
+const int ThreadsPerBlock = 64;
 
 __global__ void render_kernel(const Scene *scene, Camera camera, RenderSettings settings, const float *texture_data, Framebuffer image) {
     __shared__ Color sample_colors[ThreadsPerBlock];
