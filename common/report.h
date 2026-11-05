@@ -10,6 +10,9 @@ void print_report_header(const char *backend, const RenderSettings &settings, in
     std::cout << "Ray tracer benchmark\n"
               << "Backend                 : " << backend << '\n'
               << "Tori                    : " << TorusCount << '\n'
+              << "Torus acceleration      : BVH (CPU-built, outside render timing)\n"
+              << "BVH nodes               : " << TorusBvhNodeCount << '\n'
+              << "BVH maximum depth       : " << TorusBvhDepth << '\n'
               << "Room surfaces           : " << RectangleCount << '\n'
               << "Area lights             : " << LightCount << '\n'
               << "Resolution              : " << settings.width << " x " << settings.height << '\n'

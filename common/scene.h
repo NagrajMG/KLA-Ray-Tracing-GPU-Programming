@@ -1,6 +1,7 @@
 #pragma once
 
 #include "camera.h"
+#include "bvh.h"
 #include "texture.h"
 
 const float RoomHalfWidth = 0.5f * TorusColumns * TorusSpacing + 2.0f;
@@ -103,6 +104,8 @@ Scene make_scene(std::vector<float> &texture_data) {
                 radius,    major_radius / radius, minor_radius / radius};
         }
     }
+
+    build_torus_bvh(scene);
 
     scene.rectangles[0] = make_rectangle({-RoomHalfWidth, 0, FloorFront}, {2.0f * RoomHalfWidth, 0, 0}, {0, 0, -FloorFront - RoomHalfDepth}, FloorMaterial);
     scene.rectangles[1] = make_rectangle({-RoomHalfWidth, RoomHeight, -RoomHalfDepth}, {2.0f * RoomHalfWidth, 0, 0}, {0, 0, 2.0f * RoomHalfDepth}, WallMaterial);

@@ -12,6 +12,19 @@ constexpr float pi = 3.14159265358979323846f;
 const int TorusRows = 8;
 const int TorusColumns = 8;
 const int TorusCount = TorusRows * TorusColumns;
+const int TorusBvhNodeCount = 2 * TorusCount - 1;
+constexpr int ceil_log2(int value) {
+    int bits = 0;
+    for (int remaining = value - 1; remaining > 0; remaining >>= 1)
+        ++bits;
+    return bits;
+}
+const int TorusBvhDepth = ceil_log2(TorusCount);
+const int TorusBvhIndexBits = ceil_log2(TorusBvhNodeCount);
+// Balanced median splits bound the pending-node stack. Pack indices into a
+// register-sized integer instead of a dynamically indexed local-memory array.
+static_assert(TorusCount > 1 && TorusBvhDepth * TorusBvhIndexBits <= 64,
+              "The packed BVH stack must fit in 64 bits");
 const float TorusSpacing = 3.3f;
 const int RectangleCount = 5;
 const int LightCount = 2;
@@ -58,6 +71,17 @@ struct Torus {
     float radius;
     float scaled_major_radius;
     float scaled_minor_radius;
+};
+
+struct Bounds {
+    Vec3 minimum;
+    Vec3 maximum;
+};
+
+struct BvhNode {
+    Bounds bounds;
+    int first;  // Left child for an interior node, torus index for a leaf.
+    int second; // Right child for an interior node, -1 for a leaf.
 };
 
 struct Rectangle {
@@ -119,6 +143,7 @@ struct AreaLight {
 
 struct Scene {
     Torus tori[TorusCount];
+    BvhNode torus_bvh[TorusBvhNodeCount];
     Rectangle rectangles[RectangleCount];
     Material materials[MaterialCount];
     AreaLight lights[LightCount];

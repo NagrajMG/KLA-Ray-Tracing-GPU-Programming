@@ -1,0 +1,5 @@
+nvcc: NVIDIA (R) Cuda compiler driver
+Copyright (c) 2005-2021 NVIDIA Corporation
+Built on Sun_Aug_15_21:14:11_PDT_2021
+Cuda compilation tools, release 11.4, V11.4.120
+Build cuda_11.4.r11.4/compiler.30300941_0

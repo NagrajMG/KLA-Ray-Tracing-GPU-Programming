@@ -4,6 +4,7 @@
 
 #include <cstdio>
 #include <filesystem>
+#include <stdexcept>
 #include <vector>
 
 unsigned char display_channel(float value) {
@@ -11,7 +12,9 @@ unsigned char display_channel(float value) {
 }
 
 void write_image(const char *filename, Framebuffer image, const RenderSettings &settings) {
-    std::filesystem::create_directories(std::filesystem::path(filename).parent_path());
+    auto directory = std::filesystem::path(filename).parent_path();
+    if (!directory.empty())
+        std::filesystem::create_directories(directory);
     int pixel_count = settings.width * settings.height;
     std::vector<unsigned char> pixels(3 * pixel_count);
     for (int pixel = 0; pixel < pixel_count; ++pixel) {
@@ -20,7 +23,11 @@ void write_image(const char *filename, Framebuffer image, const RenderSettings &
         pixels[3 * pixel + 2] = display_channel(image.blue[pixel]);
     }
     FILE *file = fopen(filename, "wb");
+    if (!file)
+        throw std::runtime_error("Failed to open image output");
     fprintf(file, "P6\n%d %d\n255\n", settings.width, settings.height);
-    fwrite(pixels.data(), 1, pixels.size(), file);
-    fclose(file);
+    size_t written = fwrite(pixels.data(), 1, pixels.size(), file);
+    int closed = fclose(file);
+    if (written != pixels.size() || closed != 0)
+        throw std::runtime_error("Failed to write image output");
 }

@@ -5,6 +5,7 @@
 #include "../common/report.h"
 #include "../common/scene.h"
 
+#include <cstdlib>
 #include <iostream>
 #include <vector>
 
@@ -40,10 +41,27 @@ __global__ void render_kernel(const Scene *scene, Camera camera, RenderSettings 
     if (pixel < settings.width * settings.height && sample_lane == 0) store_pixel(image, pixel, sample_colors[threadIdx.x] / (float)sample_count);
 }
 
-int main() {
+void check_cuda(cudaError_t status, const char *operation) {
+    if (status != cudaSuccess) {
+        std::cerr << operation << ": " << cudaGetErrorString(status) << '\n';
+        std::exit(EXIT_FAILURE);
+    }
+}
+
+int main(int argc, char **argv) {
+    if (argc > 2) {
+        std::cerr << "Usage: " << argv[0] << " [image.ppm]\n";
+        return EXIT_FAILURE;
+    }
+    int device;
+    check_cuda(cudaGetDevice(&device), "Get CUDA device");
+    cudaDeviceProp properties;
+    check_cuda(cudaGetDeviceProperties(&properties, device), "Get CUDA device properties");
+    std::cout << "CUDA device             : " << properties.name << '\n'
+              << "Compute capability      : " << properties.major << '.' << properties.minor << '\n';
     RenderSettings settings = configuration();
     int warmup_runs = 2;
-    const char *image_path = "images/gpu/render.ppm";
+    const char *image_path = argc > 1 ? argv[1] : "images/gpu/render.ppm";
     print_report_header("GPU", settings, warmup_runs, "CUDA events; render kernels only",
                         image_path);
     std::vector<float> texture_data;
@@ -56,11 +74,11 @@ int main() {
     Scene *device_scene;
     float *device_texture_data;
     float *device_pixels;
-    cudaMalloc(&device_scene, sizeof(Scene));
-    cudaMalloc(&device_texture_data, texture_data.size() * sizeof(float));
-    cudaMalloc(&device_pixels, pixels.size() * sizeof(float));
-    cudaMemcpy(device_scene, &scene, sizeof(Scene), cudaMemcpyHostToDevice);
-    cudaMemcpy(device_texture_data, texture_data.data(), texture_data.size() * sizeof(float), cudaMemcpyHostToDevice);
+    check_cuda(cudaMalloc(&device_scene, sizeof(Scene)), "cudaMalloc");
+    check_cuda(cudaMalloc(&device_texture_data, texture_data.size() * sizeof(float)), "cudaMalloc");
+    check_cuda(cudaMalloc(&device_pixels, pixels.size() * sizeof(float)), "cudaMalloc");
+    check_cuda(cudaMemcpy(device_scene, &scene, sizeof(Scene), cudaMemcpyHostToDevice), "cudaMemcpy");
+    check_cuda(cudaMemcpy(device_texture_data, texture_data.data(), texture_data.size() * sizeof(float), cudaMemcpyHostToDevice), "cudaMemcpy");
     Framebuffer device_image{device_pixels, device_pixels + pixel_count, device_pixels + 2 * pixel_count};
 
     int pixels_per_block = ThreadsPerBlock / ThreadsPerPixel;
@@ -73,28 +91,30 @@ int main() {
               << std::flush;
     for (int run = 0; run < warmup_runs; ++run) {
         render_kernel<<<block_count, ThreadsPerBlock>>>(device_scene, camera, settings, device_texture_data, device_image);
+        check_cuda(cudaGetLastError(), "Launch render_kernel");
     }
-    cudaDeviceSynchronize();
+    check_cuda(cudaDeviceSynchronize(), "cudaDeviceSynchronize");
 
     cudaEvent_t start;
     cudaEvent_t stop;
-    cudaEventCreate(&start);
-    cudaEventCreate(&stop);
-    cudaEventRecord(start);
+    check_cuda(cudaEventCreate(&start), "cudaEventCreate");
+    check_cuda(cudaEventCreate(&stop), "cudaEventCreate");
+    check_cuda(cudaEventRecord(start), "cudaEventRecord");
     for (int run = 0; run < settings.runs; ++run) {
         render_kernel<<<block_count, ThreadsPerBlock>>>(device_scene, camera, settings, device_texture_data, device_image);
+        check_cuda(cudaGetLastError(), "Launch render_kernel");
     }
-    cudaEventRecord(stop);
-    cudaEventSynchronize(stop);
+    check_cuda(cudaEventRecord(stop), "cudaEventRecord");
+    check_cuda(cudaEventSynchronize(stop), "cudaEventSynchronize");
     float total_ms;
-    cudaEventElapsedTime(&total_ms, start, stop);
+    check_cuda(cudaEventElapsedTime(&total_ms, start, stop), "cudaEventElapsedTime");
 
-    cudaMemcpy(pixels.data(), device_pixels, pixels.size() * sizeof(float), cudaMemcpyDeviceToHost);
+    check_cuda(cudaMemcpy(pixels.data(), device_pixels, pixels.size() * sizeof(float), cudaMemcpyDeviceToHost), "cudaMemcpy");
     write_image(image_path, image, settings);
     print_render_time(total_ms / settings.runs);
-    cudaEventDestroy(start);
-    cudaEventDestroy(stop);
-    cudaFree(device_scene);
-    cudaFree(device_texture_data);
-    cudaFree(device_pixels);
+    check_cuda(cudaEventDestroy(start), "cudaEventDestroy");
+    check_cuda(cudaEventDestroy(stop), "cudaEventDestroy");
+    check_cuda(cudaFree(device_scene), "cudaFree");
+    check_cuda(cudaFree(device_texture_data), "cudaFree");
+    check_cuda(cudaFree(device_pixels), "cudaFree");
 }

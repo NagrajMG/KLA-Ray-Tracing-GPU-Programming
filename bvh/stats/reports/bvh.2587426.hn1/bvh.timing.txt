@@ -1,0 +1,27 @@
+CUDA device             : Tesla V100-PCIE-32GB
+Compute capability      : 7.0
+Ray tracer benchmark
+Backend                 : GPU
+Tori                    : 64
+Torus acceleration      : BVH (CPU-built, outside render timing)
+BVH nodes               : 127
+BVH maximum depth       : 6
+Room surfaces           : 5
+Area lights             : 2
+Resolution              : 640 x 360
+Camera samples          : 16 (4 x 4)
+Samples per light       : 8 (4 x 2)
+Reflection depth        : 3
+Geometry precision      : float
+Colour precision        : float
+Ray epsilon             : 1e-05
+Timed runs              : 5
+Warm-up runs            : 2
+Timing scope            : CUDA events; render kernels only
+Image                   : /lfs/usrhome/btech/ep23b048/KLA_BVH_test/images/gpu/bvh.2587426.hn1/render.ppm
+Kernel                  : render_kernel
+Threads per pixel       : 16
+Threads per block       : 32
+Pixels per block        : 2
+Blocks                  : 115200
+Average render time (ms): 81.465

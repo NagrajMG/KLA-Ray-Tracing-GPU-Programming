@@ -1,0 +1,4 @@
+make: Warning: File `Makefile' has modification time 640 s in the future
+mkdir -p bin
+nvcc -O3 -std=c++17 -lineinfo -arch=sm_70 gpu/main.cu -o bin/raytracer_gpu
+make: warning:  Clock skew detected.  Your build may be incomplete.

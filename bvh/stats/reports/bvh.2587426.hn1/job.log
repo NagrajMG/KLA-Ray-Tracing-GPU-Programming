@@ -1,0 +1,40 @@
+Working directory: /lfs/usrhome/btech/ep23b048/KLA_BVH_test
+GPU architecture: sm_70
+Loading cuda11.4...
+Git metadata unavailable; continuing with the copied sources.
+Building BVH renderer...
+make: Warning: File `Makefile' has modification time 640 s in the future
+mkdir -p bin
+nvcc -O3 -std=c++17 -lineinfo -arch=sm_70 gpu/main.cu -o bin/raytracer_gpu
+make: warning:  Clock skew detected.  Your build may be incomplete.
+Rendering with BVH...
+CUDA device             : Tesla V100-PCIE-32GB
+Compute capability      : 7.0
+Ray tracer benchmark
+Backend                 : GPU
+Tori                    : 64
+Torus acceleration      : BVH (CPU-built, outside render timing)
+BVH nodes               : 127
+BVH maximum depth       : 6
+Room surfaces           : 5
+Area lights             : 2
+Resolution              : 640 x 360
+Camera samples          : 16 (4 x 4)
+Samples per light       : 8 (4 x 2)
+Reflection depth        : 3
+Geometry precision      : float
+Colour precision        : float
+Ray epsilon             : 1e-05
+Timed runs              : 5
+Warm-up runs            : 2
+Timing scope            : CUDA events; render kernels only
+Image                   : /lfs/usrhome/btech/ep23b048/KLA_BVH_test/images/gpu/bvh.2587426.hn1/render.ppm
+Kernel                  : render_kernel
+Threads per pixel       : 16
+Threads per block       : 32
+Pixels per block        : 2
+Blocks                  : 115200
+Average render time (ms): 81.465
+Image: /lfs/usrhome/btech/ep23b048/KLA_BVH_test/images/gpu/bvh.2587426.hn1/render.ppm
+Reports: /lfs/usrhome/btech/ep23b048/KLA_BVH_test/stats/reports/bvh.2587426.hn1
+Job finished: 2026-11-05T22:58:01+0530; exit status: 0

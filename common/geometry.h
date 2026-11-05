@@ -195,66 +195,94 @@ HD float intersect_torus(const Ray &ray, const Torus &torus, float t_min, float 
     return -1.0f;
 }
 
-HD int intersect_tori(const Ray &ray, const Scene &scene, float t_min, float &t_max) {
-    // each torus inside own cell, first hit is nearest
-    float half_x = 0.5f * TorusColumns * TorusSpacing;
-    float half_z = 0.5f * TorusRows * TorusSpacing;
-    float enter = t_min;
-    float exit = t_max;
-    for (int axis = 0; axis < 2; ++axis) {
-        float origin = axis == 0 ? ray.origin.x : ray.origin.z;
-        float direction = axis == 0 ? ray.direction.x : ray.direction.z;
-        float half = axis == 0 ? half_x : half_z;
+HD bool intersect_bounds(const Ray &ray, Vec3 inverse_direction, const Bounds &bounds,
+                         float t_min, float t_max, float &entry) {
+    entry = t_min;
+    for (int axis = 0; axis < 3; ++axis) {
+        float origin = axis == 0 ? ray.origin.x : axis == 1 ? ray.origin.y : ray.origin.z;
+        float direction = axis == 0 ? ray.direction.x : axis == 1 ? ray.direction.y : ray.direction.z;
+        float inverse = axis == 0 ? inverse_direction.x
+                                 : axis == 1 ? inverse_direction.y : inverse_direction.z;
+        float low = axis == 0 ? bounds.minimum.x : axis == 1 ? bounds.minimum.y : bounds.minimum.z;
+        float high = axis == 0 ? bounds.maximum.x : axis == 1 ? bounds.maximum.y : bounds.maximum.z;
         if (direction == 0.0f) {
-            if (fabsf(origin) > half)
-                return -1;
-        } else {
-            float first = (-half - origin) / direction;
-            float last = (half - origin) / direction;
-            enter = fmaxf(enter, fminf(first, last));
-            exit = fminf(exit, fmaxf(first, last));
+            if (origin < low || origin > high)
+                return false;
+            continue;
         }
+        // A tiny nonzero direction can overflow its reciprocal. Divide directly
+        // in that case so an origin on a slab face does not produce 0 * infinity.
+        float first = std::isfinite(inverse) ? (low - origin) * inverse : (low - origin) / direction;
+        float last = std::isfinite(inverse) ? (high - origin) * inverse : (high - origin) / direction;
+        entry = fmaxf(entry, fminf(first, last));
+        t_max = fminf(t_max, fmaxf(first, last));
+        if (entry > t_max)
+            return false;
     }
-    if (enter > exit)
+    return entry <= t_max;
+}
+
+template <bool AnyHit>
+HD int traverse_torus_bvh(const Ray &ray, const Scene &scene, float t_min, float &t_max) {
+    Vec3 inverse_direction{ray.direction.x == 0.0f ? 0.0f : 1.0f / ray.direction.x,
+                           ray.direction.y == 0.0f ? 0.0f : 1.0f / ray.direction.y,
+                           ray.direction.z == 0.0f ? 0.0f : 1.0f / ray.direction.z};
+    float root_entry;
+    if (!intersect_bounds(ray, inverse_direction, scene.torus_bvh[0].bounds,
+                          t_min, t_max, root_entry))
         return -1;
 
-    Vec3 entry = ray.origin + ray.direction * enter;
-    int column =
-        (int)fminf(TorusColumns - 1, fmaxf(0.0f, floorf((entry.x + half_x) / TorusSpacing)));
-    int row = (int)fminf(TorusRows - 1, fmaxf(0.0f, floorf((entry.z + half_z) / TorusSpacing)));
-    int step_x = ray.direction.x < 0.0f ? -1 : 1;
-    int step_z = ray.direction.z < 0.0f ? -1 : 1;
-    float delta_x = ray.direction.x == 0.0f ? FLT_MAX : TorusSpacing / fabsf(ray.direction.x);
-    float delta_z = ray.direction.z == 0.0f ? FLT_MAX : TorusSpacing / fabsf(ray.direction.z);
-    float next_x =
-        ray.direction.x == 0.0f
-            ? FLT_MAX
-            : ((column + (step_x > 0)) * TorusSpacing - half_x - ray.origin.x) / ray.direction.x;
-    float next_z =
-        ray.direction.z == 0.0f
-            ? FLT_MAX
-            : ((row + (step_z > 0)) * TorusSpacing - half_z - ray.origin.z) / ray.direction.z;
-    while (column >= 0 && column < TorusColumns && row >= 0 && row < TorusRows) {
-        int index = row * TorusColumns + column;
-        float t = intersect_torus(ray, scene.tori[index], t_min, t_max);
-        if (t >= 0.0f) {
-            t_max = t;
-            return index;
+    constexpr unsigned long long index_mask = (1ull << TorusBvhIndexBits) - 1;
+    unsigned long long pending = 0;
+    int pending_count = 0;
+    int node_index = 0;
+    int nearest = -1;
+    while (true) {
+        const BvhNode &node = scene.torus_bvh[node_index];
+        if (node.second < 0) {
+            float t = intersect_torus(ray, scene.tori[node.first], t_min, t_max);
+            if (t >= 0.0f) {
+                t_max = t;
+                nearest = node.first;
+                if constexpr (AnyHit)
+                    return nearest;
+            }
+        } else {
+            float left_entry, right_entry;
+            bool left_hit = intersect_bounds(ray, inverse_direction, scene.torus_bvh[node.first].bounds,
+                                             t_min, t_max, left_entry);
+            bool right_hit = intersect_bounds(ray, inverse_direction, scene.torus_bvh[node.second].bounds,
+                                              t_min, t_max, right_entry);
+            if (left_hit || right_hit) {
+                if (left_hit && right_hit) {
+                    bool left_first = left_entry <= right_entry;
+                    int far_node = left_first ? node.second : node.first;
+                    pending = (pending << TorusBvhIndexBits) | (unsigned long long)far_node;
+                    ++pending_count;
+                    node_index = left_first ? node.first : node.second;
+                } else {
+                    node_index = left_hit ? node.first : node.second;
+                }
+                continue;
+            }
         }
-        float boundary = fminf(next_x, next_z);
-        if (boundary >= exit)
+        if (pending_count == 0)
             break;
-        // at a corner, move in both directions
-        if (next_x == boundary) {
-            column += step_x;
-            next_x += delta_x;
-        }
-        if (next_z == boundary) {
-            row += step_z;
-            next_z += delta_z;
-        }
+        node_index = (int)(pending & index_mask);
+        pending >>= TorusBvhIndexBits;
+        --pending_count;
+        // Deferred children were bounded when pushed. Their descendants and
+        // primitive tests still use the latest nearest-hit distance for pruning.
     }
-    return -1;
+    return nearest;
+}
+
+HD int intersect_tori(const Ray &ray, const Scene &scene, float t_min, float &t_max) {
+    return traverse_torus_bvh<false>(ray, scene, t_min, t_max);
+}
+
+HD bool occluded_tori(const Ray &ray, const Scene &scene, float t_min, float t_max) {
+    return traverse_torus_bvh<true>(ray, scene, t_min, t_max) >= 0;
 }
 
 HD float intersect_rectangle(const Ray &ray, const Rectangle &rectangle, float t_min, float t_max,
@@ -282,7 +310,7 @@ HD bool occluded(const Ray &ray, const Scene &scene, float t_min, float t_max) {
         if (intersect_rectangle(ray, scene.lights[i].surface, t_min, t_max, u, v) >= 0.0f)
             return true;
     }
-    return intersect_tori(ray, scene, t_min, t_max) >= 0;
+    return occluded_tori(ray, scene, t_min, t_max);
 }
 
 HD Hit intersect_scene(const Ray &ray, const Scene &scene, float t_min, float t_max) {
