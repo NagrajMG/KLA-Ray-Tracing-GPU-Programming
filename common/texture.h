@@ -4,13 +4,13 @@
 
 #include <vector>
 
-HD Color texture_texel(const Texture &texture, const float *data, int x, int y) {
+HD Color texture_texel(const Texture &texture, const ColorScalar *data, int x, int y) {
     int offset = (y * texture.width + x) * 3;
     return {data[offset], data[offset + 1], data[offset + 2]};
 }
 
 // bilinear interpolation using the 4 upper and lower texels
-HD Color sample_texture(const Texture &texture, const float *data, float u, float v) {
+HD Color sample_texture(const Texture &texture, const ColorScalar *data, float u, float v) {
     // space coordinates
     float x = (u - floorf(u)) * texture.width - 0.5f;
     float y = (v - floorf(v)) * texture.height - 0.5f;
@@ -30,7 +30,7 @@ HD Color sample_texture(const Texture &texture, const float *data, float u, floa
 }
 
 // create checkerboard data
-void make_textures(Texture *textures, std::vector<float> &data) {
+void make_textures(Texture *textures, std::vector<ColorScalar> &data) {
     Texture &texture = textures[FloorColor];
     texture = {512, 512}; // each pixel in texture is texel, 512 * 512 texels
     data.resize(texture.width * texture.height * 3);
