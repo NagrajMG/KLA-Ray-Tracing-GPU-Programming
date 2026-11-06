@@ -90,6 +90,8 @@ Scene make_scene(std::vector<float> &texture_data) {
 
     scene.torus_min_y = FLT_MAX;
     scene.torus_max_y = -FLT_MAX;
+
+    // we have 3 tyoes of inner radii
     float tube_radii[3] = {0.16f, 0.26f, 0.38f};
     for (int row = 0; row < TorusRows; ++row) {
         for (int column = 0; column < TorusColumns; ++column) {
@@ -97,14 +99,15 @@ Scene make_scene(std::vector<float> &texture_data) {
             float minor_radius = tube_radii[(row + column) % 3];
             TorusOrientation orientation = row < TorusRows / 2 ? Upright : Flat;
             float y = orientation == Flat ? minor_radius : major_radius + minor_radius;
-            float x =
-                (column - 0.5f * (TorusColumns - 1)) * TorusSpacing + 0.35f * ((row % 2) - 0.5f);
+            // Uses the column, plus a +/- 0.175 stagger on alternate rows
+            float x = (column - 0.5f * (TorusColumns - 1)) * TorusSpacing + 0.35f * ((row % 2) - 0.5f);
+            // Uses the row with a 3.3-unit spacing
             float z = (row - 0.5f * (TorusRows - 1)) * TorusSpacing;
             int index = row * TorusColumns + column;
             float radius = major_radius + minor_radius;
             Torus &torus = scene.tori[index];
             torus = {
-                {x, y, z}, major_radius,          orientation,          MetalMaterial + index % 3,
+                {x, y, z}, major_radius, orientation, MetalMaterial + index % 3,
                 radius,    major_radius / radius, minor_radius / radius};
             float scaled_height =
                 orientation == Flat

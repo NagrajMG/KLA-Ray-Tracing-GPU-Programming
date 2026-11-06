@@ -206,6 +206,7 @@ HD float intersect_torus(const Ray &ray, const Torus &torus, const RayMeasuremen
     return -1.0f;
 }
 
+// Amanatides - Woo traversal code
 HD int intersect_tori(const Ray &ray, const Scene &scene, float t_min, float &t_max) {
     // each torus inside own cell, first hit is nearest
     float half_x = 0.5f * TorusColumns * TorusSpacing;
@@ -232,12 +233,16 @@ HD int intersect_tori(const Ray &ray, const Scene &scene, float t_min, float &t_
     if (enter > exit)
         return -1;
 
+    // before this you get the entry and exit of the grid
     Vec3 entry = ray.origin + ray.direction * enter;
-    int column =
-        (int)fminf(TorusColumns - 1, fmaxf(0.0f, floorf((entry.x + half_x) / TorusSpacing)));
+
+    // Finding the first cell entered by the ray
+    int column = (int)fminf(TorusColumns - 1, fmaxf(0.0f, floorf((entry.x + half_x) / TorusSpacing)));
     int row = (int)fminf(TorusRows - 1, fmaxf(0.0f, floorf((entry.z + half_z) / TorusSpacing)));
+    // Whether the ray travels toward increasing or decreasing cell indices
     int step_x = ray.direction.x < 0.0f ? -1 : 1;
     int step_z = ray.direction.z < 0.0f ? -1 : 1;
+    // 
     float delta_x = ray.direction.x == 0.0f ? FLT_MAX : TorusSpacing / fabsf(ray.direction.x);
     float delta_z = ray.direction.z == 0.0f ? FLT_MAX : TorusSpacing / fabsf(ray.direction.z);
     float next_x =
@@ -248,7 +253,7 @@ HD int intersect_tori(const Ray &ray, const Scene &scene, float t_min, float &t_
         ray.direction.z == 0.0f
             ? FLT_MAX
             : ((row + (step_z > 0)) * TorusSpacing - half_z - ray.origin.z) / ray.direction.z;
-    // each row has one orientation in this scene
+    // each row has one orientation in this scene, So the ray starts by testing that torus
     TorusOrientation orientation = scene.tori[row * TorusColumns].orientation;
     RayMeasurements measurements = measure_direction(torus_local(ray.direction, orientation));
     while (column >= 0 && column < TorusColumns && row >= 0 && row < TorusRows) {
@@ -258,6 +263,7 @@ HD int intersect_tori(const Ray &ray, const Scene &scene, float t_min, float &t_
             t_max = t;
             return index;
         }
+        // find the next boundary
         float boundary = fminf(next_x, next_z);
         if (boundary >= exit)
             break;
@@ -271,6 +277,7 @@ HD int intersect_tori(const Ray &ray, const Scene &scene, float t_min, float &t_
             next_z += delta_z;
             if (row < 0 || row >= TorusRows)
                 break;
+            // orientation change in the rows
             TorusOrientation next_orientation = scene.tori[row * TorusColumns].orientation;
             if (next_orientation != orientation) {
                 orientation = next_orientation;
