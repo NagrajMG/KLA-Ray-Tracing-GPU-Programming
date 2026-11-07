@@ -1,0 +1,7 @@
+ptxas info    : Overriding maximum register limit 256 for '_Z13render_kernel6Camera14RenderSettingsPKf11Framebuffer' with  96 of maxrregcount option
+ptxas info    : 0 bytes gmem, 3276 bytes cmem[3]
+ptxas info    : Compiling entry function '_Z13render_kernel6Camera14RenderSettingsPKf11Framebuffer' for 'sm_86'
+ptxas info    : Function properties for _Z13render_kernel6Camera14RenderSettingsPKf11Framebuffer
+    48 bytes stack frame, 16 bytes spill stores, 16 bytes spill loads
+ptxas info    : Used 96 registers, used 1 barriers, 48 bytes cumulative stack size, 768 bytes smem, 464 bytes cmem[0], 32 bytes cmem[2]
+ptxas info    : Compile time = 149.890 ms
