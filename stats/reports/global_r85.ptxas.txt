@@ -4,4 +4,4 @@ ptxas info    : Compiling entry function '_Z13render_kernel6Camera14RenderSettin
 ptxas info    : Function properties for _Z13render_kernel6Camera14RenderSettingsPKf11Framebuffer
     88 bytes stack frame, 148 bytes spill stores, 152 bytes spill loads
 ptxas info    : Used 85 registers, used 1 barriers, 88 bytes cumulative stack size, 768 bytes smem, 464 bytes cmem[0], 32 bytes cmem[2]
-ptxas info    : Compile time = 156.286 ms
+ptxas info    : Compile time = 315.113 ms
