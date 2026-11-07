@@ -17,7 +17,21 @@ On Aqua, submit `qsub job_cpu.sh` or `qsub job_gpu.sh` from the repository root.
 
 ## Performance results
 
-> **Best measured GPU render: 29.589 ms/frame** - averaged over five timed runs after two warm-ups.
+> **Best measured GPU render: 29.059 ms/frame** - averaged over five timed runs after two warm-ups.
+
+### Final CPU–GPU comparison
+
+All three reports use the same scene, sampling settings and FP32 precision, with five timed runs each.
+
+| Renderer | Hardware | Mean render time (ms) | GPU speedup |
+|---|---|---:|---:|
+| Serial CPU | [Intel Core i7 · Dell G15](stats/reports/640_360_FP32_64T_final_dell_g15_i7.timing.txt) | 7,647.826 | 263.18× |
+| Serial CPU | [Apple M4 · Mac](stats/reports/640_360_FP32_64T_final_mac_m4.timing.txt) | 4,085.199 | 140.58× |
+| CUDA GPU | [NVIDIA RTX 3050 · 6 GB Laptop GPU](stats/reports/640_360_FP32_64T_final.timing.txt) | **29.059** | — |
+
+GPU speedup is each CPU time divided by the final GPU time.  
+> CPU timing uses `steady_clock` around the serial render loop, with no warm-up.  
+> GPU timing uses CUDA events around the render kernels after two warm-ups.
 
 ### Best measured configuration
 
