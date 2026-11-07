@@ -90,11 +90,11 @@ GPU speedup is each CPU time divided by the final GPU time.
 
 ### Roofline analysis
 
-**Block-size refinement · 64 threads per block.** This figure describes the height-clipped grid renderer before constant memory and register-budget tuning.
+FP32 roofline for five register configurations at 64 threads/block. The star marks the 80-register cap, which gives the best standalone time.
 
 <p align="center">
-  <a href="stats/reports/640_360_FP32_64T_height_clipping_ray_caching.roofline.png">
-    <img src="stats/reports/640_360_FP32_64T_height_clipping_ray_caching.roofline.png" alt="DRAM roofline for the Block-size refinement stage at 64 threads per block" width="900">
+  <a href="stats/reports/roofline_profiles.png">
+    <img src="stats/reports/roofline_profiles.png" alt="FP32 DRAM roofline comparing five register configurations" width="900">
   </a>
 </p>
 

@@ -1,0 +1,5 @@
+ncu-report==2026.3.1
+numpy
+matplotlib
+pillow
+ipykernel
