@@ -321,10 +321,6 @@ Uploaded the 3,276-byte scene once, before warm-up. This reduced instruction cou
 
 Swept register caps of 96, 85, 80 and 75. At 80 registers, more resident warps gave the scheduler more ready work and outweighed the extra spill cost. Reducing the budget to 75 added spills without another residency gain.
 
-### 12. Kernel launch bounds
-
-Added a launch-bounds policy targeting the 12-block-per-SM residency limit of the 80-register trial on the RTX 3050. It guides compiler allocation and does not specify an exact register count; the combined build's measurement status is recorded above.
-
 ## External references
 
 Background reading for the algorithms and tools used in this project.
@@ -337,5 +333,4 @@ Background reading for the algorithms and tools used in this project.
 | Uniform-grid traversal | [Amanatides & Woo: A Fast Voxel Traversal Algorithm for Ray Tracing (1987)](https://doi.org/10.2312/egtp.19871000) |
 | DDA visual explanation | [javidx9: Super Fast Ray Casting in Tiled Worlds using DDA](https://www.youtube.com/watch?v=NbSee-XM7WA) |
 | CUDA optimization | [NVIDIA CUDA C++ Best Practices Guide](https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html) |
-| Kernel launch bounds | [NVIDIA CUDA Programming Guide](https://docs.nvidia.com/cuda/archive/13.0.0/cuda-c-programming-guide/index.html#launch-bounds) |
 | Profiling and metric interpretation | [NVIDIA Nsight Compute Profiling Guide](https://docs.nvidia.com/nsight-compute/ProfilingGuide/index.html) |

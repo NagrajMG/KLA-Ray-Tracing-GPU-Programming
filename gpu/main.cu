@@ -13,10 +13,8 @@ const int ThreadsPerBlock = 64;
 
 __constant__ Scene constant_scene;
 
-// The fastest register-cap trial allowed 12 blocks per SM on the RTX 3050.
-__global__ void __launch_bounds__(ThreadsPerBlock, 12)
-    render_kernel(Camera camera, RenderSettings settings, const float *texture_data,
-                  Framebuffer image) {
+__global__ void render_kernel(Camera camera, RenderSettings settings, const float *texture_data,
+                              Framebuffer image) {
     __shared__ Color sample_colors[ThreadsPerBlock];
     // 16 threads for one pixel
     int pixel = blockIdx.x * (ThreadsPerBlock / ThreadsPerPixel) + threadIdx.x / ThreadsPerPixel;
