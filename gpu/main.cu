@@ -11,7 +11,10 @@
 const int ThreadsPerPixel = 16;
 const int ThreadsPerBlock = 64;
 
-__global__ void render_kernel(const Scene *scene, Camera camera, RenderSettings settings, const float *texture_data, Framebuffer image) {
+__constant__ Scene constant_scene;
+
+__global__ void render_kernel(Camera camera, RenderSettings settings, const float *texture_data,
+                              Framebuffer image) {
     __shared__ Color sample_colors[ThreadsPerBlock];
     // 16 threads for one pixel
     int pixel = blockIdx.x * (ThreadsPerBlock / ThreadsPerPixel) + threadIdx.x / ThreadsPerPixel;
@@ -23,7 +26,7 @@ __global__ void render_kernel(const Scene *scene, Camera camera, RenderSettings 
     if (pixel < settings.width * settings.height) {
         for (int sample = sample_lane; sample < sample_count; sample += ThreadsPerPixel) {
             Ray ray = ray_for_sample(camera, settings, pixel, sample);
-            color = color + trace(ray, *scene, settings, texture_data);
+            color = color + trace(ray, constant_scene, settings, texture_data);
         }
     }
     // all threads wait here, even outside image
@@ -32,12 +35,15 @@ __global__ void render_kernel(const Scene *scene, Camera camera, RenderSettings 
 
     // add colours in 8, 4, 2, 1 steps
     for (int stride = ThreadsPerPixel / 2; stride > 0; stride /= 2) {
-        if (sample_lane < stride) sample_colors[threadIdx.x] = sample_colors[threadIdx.x] + sample_colors[threadIdx.x + stride];
+        if (sample_lane < stride)
+            sample_colors[threadIdx.x] =
+                sample_colors[threadIdx.x] + sample_colors[threadIdx.x + stride];
         __syncthreads();
     }
 
     // first thread store average colour
-    if (pixel < settings.width * settings.height && sample_lane == 0) store_pixel(image, pixel, sample_colors[threadIdx.x] / (float)sample_count);
+    if (pixel < settings.width * settings.height && sample_lane == 0)
+        store_pixel(image, pixel, sample_colors[threadIdx.x] / (float)sample_count);
 }
 
 int main() {
@@ -53,15 +59,15 @@ int main() {
     std::vector<float> pixels(3 * pixel_count);
     Framebuffer image{pixels.data(), pixels.data() + pixel_count, pixels.data() + 2 * pixel_count};
 
-    Scene *device_scene;
     float *device_texture_data;
     float *device_pixels;
-    cudaMalloc(&device_scene, sizeof(Scene));
     cudaMalloc(&device_texture_data, texture_data.size() * sizeof(float));
     cudaMalloc(&device_pixels, pixels.size() * sizeof(float));
-    cudaMemcpy(device_scene, &scene, sizeof(Scene), cudaMemcpyHostToDevice);
-    cudaMemcpy(device_texture_data, texture_data.data(), texture_data.size() * sizeof(float), cudaMemcpyHostToDevice);
-    Framebuffer device_image{device_pixels, device_pixels + pixel_count, device_pixels + 2 * pixel_count};
+    cudaMemcpyToSymbol(constant_scene, &scene, sizeof(Scene));
+    cudaMemcpy(device_texture_data, texture_data.data(), texture_data.size() * sizeof(float),
+               cudaMemcpyHostToDevice);
+    Framebuffer device_image{device_pixels, device_pixels + pixel_count,
+                             device_pixels + 2 * pixel_count};
 
     int pixels_per_block = ThreadsPerBlock / ThreadsPerPixel;
     int block_count = (pixel_count + pixels_per_block - 1) / pixels_per_block;
@@ -72,7 +78,8 @@ int main() {
               << "Blocks                  : " << block_count << '\n'
               << std::flush;
     for (int run = 0; run < warmup_runs; ++run) {
-        render_kernel<<<block_count, ThreadsPerBlock>>>(device_scene, camera, settings, device_texture_data, device_image);
+        render_kernel<<<block_count, ThreadsPerBlock>>>(camera, settings, device_texture_data,
+                                                        device_image);
     }
     cudaDeviceSynchronize();
 
@@ -82,7 +89,8 @@ int main() {
     cudaEventCreate(&stop);
     cudaEventRecord(start);
     for (int run = 0; run < settings.runs; ++run) {
-        render_kernel<<<block_count, ThreadsPerBlock>>>(device_scene, camera, settings, device_texture_data, device_image);
+        render_kernel<<<block_count, ThreadsPerBlock>>>(camera, settings, device_texture_data,
+                                                        device_image);
     }
     cudaEventRecord(stop);
     cudaEventSynchronize(stop);
@@ -94,7 +102,6 @@ int main() {
     print_render_time(total_ms / settings.runs);
     cudaEventDestroy(start);
     cudaEventDestroy(stop);
-    cudaFree(device_scene);
     cudaFree(device_texture_data);
     cudaFree(device_pixels);
 }
