@@ -7,13 +7,17 @@ Serial C++ and CUDA renderers trace a room with 64 coloured tori, mirrored side 
 </p>
 
 ## Build and run
+Requires Make and a C++17 compiler.
 
-| Renderer | Build | Run |
-|---|---|---|
-| Serial CPU | `make cpu` | `./bin/raytracer_cpu` |
-| CUDA GPU | `make gpu` | `./bin/raytracer_gpu` |
+**Set `-arch=sm_86` in [Makefile](Makefile) to match GPU's compute capability.** The current value targets capability 8.6 (RTX 3050).
 
-On Aqua, submit `qsub job_cpu.sh` or `qsub job_gpu.sh` from the repository root.
+| Renderer | Build | Run | Image output |
+|---|---|---|---|
+| CPU | `make cpu` | `./bin/raytracer_cpu` | `images/cpu/render.ppm` |
+| GPU | `make gpu` | `./bin/raytracer_gpu` | `images/gpu/render.ppm` |
+
+`make clean` removes the executables.  
+On Aqua, use `qsub job_cpu.sh` or `qsub job_gpu.sh` (loads CUDA 11.4).
 
 ## Performance results
 
